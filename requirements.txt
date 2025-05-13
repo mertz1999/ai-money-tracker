@@ -4,3 +4,6 @@ langchain
 langchain-openai
 python-dotenv
 openrouter
+matplotlib
+pandas
+numpy

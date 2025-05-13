@@ -1,3 +1,4 @@
 *.db
 modules/__pycache__
 tests/__pycache__
+*.json

@@ -1,6 +1,125 @@
-# Money Tracker System
+# AI Money Tracker
 
-A simple money tracking system with SQLite database support and currency exchange functionality. This is the initial version without AI features.
+A Python-based money tracking system that helps you manage your finances with AI-powered transaction parsing.
+
+## Features
+
+- **Database Management**: SQLite-based storage for transactions, categories, and sources
+- **Currency Exchange**: Real-time and cached currency exchange rates
+- **AI Transaction Parsing**: Intelligent transaction information extraction using OpenAI's language models
+- **Category and Source Management**: Structured organization of transaction categories and payment sources
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/ai-money-tracker.git
+cd ai-money-tracker
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. Create a `.env` file with your API keys:
+```env
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_BASE=your_openrouter_base_url
+OPENAI_MODEL_NAME=your_preferred_model
+```
+
+## Modules
+
+### Database Module (`modules/database.py`)
+- SQLite database management
+- CRUD operations for transactions, categories, and sources
+- Efficient data storage and retrieval
+
+### Currency Exchange Module (`modules/currency_exchange.py`)
+- Real-time currency exchange rate fetching
+- JSON-based rate caching
+- Configurable cache duration
+- Support for multiple currencies
+
+### Transaction Parser Module (`modules/transaction_parser.py`)
+- AI-powered transaction information extraction
+- Support for custom categories and sources
+- Structured output using Pydantic models
+- Intelligent date and amount parsing
+
+#### Usage Example:
+```python
+from modules.transaction_parser import TransactionParser
+
+# Define available categories and sources
+categories = [
+    "Groceries",
+    "Entertainment",
+    "Utilities",
+    "Transportation",
+    "Shopping",
+    "Dining",
+    "Healthcare"
+]
+
+sources = [
+    "Cash",
+    "Bank-Account",
+    "Credit-Card",
+    "USD Account",
+    "Debit-Card"
+]
+
+# Create parser instance
+parser = TransactionParser(
+    available_categories=categories,
+    available_sources=sources
+)
+
+# Parse a transaction
+transaction = parser.parse_transaction(
+    "I spent 50 dollars on groceries at Walmart yesterday using my bank account"
+)
+
+# Access parsed information
+print(f"Name: {transaction.name}")
+print(f"Date: {transaction.date}")
+print(f"Price: ${transaction.price_in_dollar:.2f}")
+print(f"Category: {transaction.category_name}")
+print(f"Source: {transaction.source_name}")
+```
+
+## Development
+
+### Running Tests
+```bash
+python -m pytest tests/
+```
+
+### Code Style
+The project follows PEP 8 guidelines. Use a linter to ensure code quality:
+```bash
+flake8 modules/ tests/
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Project Structure
 

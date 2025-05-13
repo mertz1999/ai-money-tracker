@@ -114,7 +114,7 @@ class TransactionParser:
             print(f"Error parsing transaction: {e}")
             print("Failed to parse the following response:")
             print(cleaned_response)
-            return None
+            raise ValueError(f"Failed to parse transaction response: {cleaned_response}")
 
 # Sample usage code
 if __name__ == "__main__":
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # Sample transaction texts
     sample_texts = [
         "I spent 50 dollars on groceries at Walmart yesterday using my bank account",
-        "Bought a movie ticket for 15 USD with cash today",
+        "Bought a movie ticket for 15 USD",
         "Paid 200 dollars for electricity bill from my USD account last week"
     ]
     

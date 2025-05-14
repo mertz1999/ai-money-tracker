@@ -13,6 +13,46 @@
     --topnav-height: 60px;
 }
 
+/* Import Vazir font for Persian text */
+@font-face {
+    font-family: 'Vazir';
+    src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir-Regular.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Vazir';
+    src: url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir-Bold.woff2') format('woff2'),
+         url('https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/Vazir-Bold.woff') format('woff');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Persian text support */
+.font-vazir {
+    font-family: 'Vazir', system-ui, -apple-system, sans-serif !important;
+}
+
+/* RTL text support */
+.text-end {
+    text-align: right !important;
+}
+
+/* Ensure proper alignment for mixed LTR/RTL content */
+[dir="ltr"] {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+[dir="rtl"] {
+    direction: rtl;
+    unicode-bidi: isolate;
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #f8f9fc;

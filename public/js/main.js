@@ -21,17 +21,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const currencyText = this.innerText.trim();
             currencyButton.innerHTML = `${this.innerHTML.trim()}`;
             
-            // Trigger currency change event
-            const event = new CustomEvent('currencyChange', {
-                detail: { currency: currencyText }
-            });
-            document.dispatchEvent(event);
+            // Update displayed values based on selected currency
+            updateDisplayCurrency(currencyText);
         });
     });
     
-    // Load categories and sources for dropdowns
+    // Load initial data
     loadCategories();
     loadSources();
+    loadTransactions();
     
     // Parse Transaction Button
     const parseTransactionBtn = document.getElementById('parseTransactionBtn');
@@ -49,16 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveSourceBtn = document.getElementById('saveSourceBtn');
     if (saveSourceBtn) {
         saveSourceBtn.addEventListener('click', saveSource);
-    }
-    
-    // Update currency symbol when currency selection changes
-    const sourceCurrency = document.getElementById('sourceCurrency');
-    const sourceValueCurrency = document.getElementById('sourceValueCurrency');
-    
-    if (sourceCurrency && sourceValueCurrency) {
-        sourceCurrency.addEventListener('change', function() {
-            sourceValueCurrency.textContent = this.value === 'true' ? '$' : '₺';
-        });
     }
 });
 
@@ -78,6 +66,7 @@ function loadCategories() {
                     categorySelect.appendChild(option);
                 });
             }
+            updateCategoryStats(categories);
         })
         .catch(error => {
             console.error('Error loading categories:', error);
@@ -100,9 +89,56 @@ function loadSources() {
                     sourceSelect.appendChild(option);
                 });
             }
+            updateSourcesTable(sources);
+            updateTotalBalance(sources);
         })
         .catch(error => {
             console.error('Error loading sources:', error);
+        });
+}
+
+// Load transactions from API
+function loadTransactions() {
+    fetch('http://localhost:9000/api/transactions')
+        .then(response => response.json())
+        .then(transactions => {
+            console.log('Transactions loaded:', transactions);
+            
+            // Process transactions to calculate USD values
+            const processedTransactions = transactions.map(tx => ({
+                ...tx,
+                price_in_dollar: tx.is_usd ? tx.price : tx.price / 50000, // Assuming 1 USD = 50000 Toman
+                is_income: tx.price > 0
+            }));
+            
+            updateTransactionsTable(processedTransactions);
+            
+            // Calculate totals for transaction stats
+            const totals = processedTransactions.reduce((acc, tx) => {
+                const amount = Math.abs(tx.price_in_dollar);
+                if (tx.is_income) {
+                    acc.income += amount;
+                } else {
+                    acc.expense += amount;
+                }
+                return acc;
+            }, { income: 0, expense: 0 });
+            
+            updateTransactionSummary(totals.income, totals.expense);
+        })
+        .catch(error => {
+            console.error('Error loading transactions:', error);
+            // Show error message to user
+            const transactionsTable = document.querySelector('#transactions-table tbody');
+            if (transactionsTable) {
+                transactionsTable.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-danger">
+                            Failed to load transactions. Please try again later.
+                        </td>
+                    </tr>
+                `;
+            }
         });
 }
 
@@ -176,14 +212,6 @@ function parseTransactionDescription() {
 
 // Save transaction to database
 function saveTransaction() {
-    // Check if we have parsed data
-    const parsedDetails = document.getElementById('parsedTransactionDetails');
-    if (parsedDetails.style.display === 'none') {
-        // If not parsed yet, try to parse
-        parseTransactionDescription();
-        return;
-    }
-    
     // Get form values
     const name = document.getElementById('transactionName').value;
     const date = document.getElementById('transactionDate').value;
@@ -221,7 +249,7 @@ function saveTransaction() {
     .then(response => {
         if (!response.ok) {
             return response.json().then(err => {
-                throw new Error(err.error || 'Failed to save transaction');
+                throw new Error(err.detail || 'Failed to save transaction');
             });
         }
         return response.json();
@@ -235,8 +263,9 @@ function saveTransaction() {
         document.getElementById('addTransactionForm').reset();
         document.getElementById('parsedTransactionDetails').style.display = 'none';
         
-        // Refresh dashboard data
-        document.dispatchEvent(new Event('refreshDashboard'));
+        // Refresh data
+        loadTransactions();
+        loadSources();
         
         // Show success message
         alert('Transaction added successfully!');
@@ -287,7 +316,7 @@ function saveSource() {
     .then(response => {
         if (!response.ok) {
             return response.json().then(err => {
-                throw new Error(err.error || 'Failed to save source');
+                throw new Error(err.detail || 'Failed to save source');
             });
         }
         return response.json();
@@ -300,8 +329,7 @@ function saveSource() {
         // Reset form
         document.getElementById('addSourceForm').reset();
         
-        // Refresh dashboard data and source dropdown
-        document.dispatchEvent(new Event('refreshDashboard'));
+        // Refresh data
         loadSources();
         
         // Show success message
@@ -316,4 +344,160 @@ function saveSource() {
         saveBtn.textContent = 'Save Source';
         saveBtn.disabled = false;
     });
+}
+
+// Update sources table
+function updateSourcesTable(sources) {
+    const tbody = document.querySelector('#sources-table tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    let totalUSD = 0;
+    let totalToman = 0;
+    
+    sources.forEach(source => {
+        const row = document.createElement('tr');
+        
+        // Calculate icon and background class
+        let iconClass = source.bank ? 'fa-university' : 'fa-wallet';
+        let bgClass = source.usd ? 'bg-success' : 'bg-primary';
+        
+        // Format value based on currency
+        const formattedValue = source.usd 
+            ? `$${source.value.toFixed(2)}` 
+            : `${source.value.toLocaleString()} ₺`;
+            
+        // Update totals
+        if (source.usd) {
+            totalUSD += source.value;
+        } else {
+            totalToman += source.value;
+        }
+        
+        row.innerHTML = `
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="source-icon ${bgClass}">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0">${source.name}</h6>
+                    </div>
+                </div>
+            </td>
+            <td>${source.bank ? 'Bank' : 'Cash'}</td>
+            <td>${formattedValue}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+    
+    // Update summary cards
+    updateBalanceSummary(totalUSD, totalToman);
+}
+
+// Update transactions table
+function updateTransactionsTable(transactions) {
+    const tbody = document.querySelector('#transactions-table tbody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    // Sort transactions by date (most recent first)
+    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    transactions.forEach(tx => {
+        const row = document.createElement('tr');
+        
+        // Determine if text contains Persian characters
+        const hasPersian = /[\u0600-\u06FF]/.test(tx.name);
+        const nameClass = hasPersian ? 'font-vazir text-end' : '';
+        
+        // Determine icon based on category (you can expand this)
+        let iconClass = 'fa-shopping-cart';
+        switch(tx.category_name.toLowerCase()) {
+            case 'food':
+            case 'groceries':
+            case 'غذا':
+            case 'خوراک':
+                iconClass = 'fa-utensils';
+                break;
+            case 'transportation':
+            case 'حمل و نقل':
+                iconClass = 'fa-car';
+                break;
+            case 'entertainment':
+            case 'تفریح':
+                iconClass = 'fa-film';
+                break;
+            case 'utilities':
+            case 'قبوض':
+                iconClass = 'fa-bolt';
+                break;
+            case 'healthcare':
+            case 'پزشکی':
+            case 'سلامت':
+                iconClass = 'fa-medkit';
+                break;
+        }
+        
+        let bgClass = tx.is_income ? 'bg-success' : 'bg-danger';
+        
+        // Format amount based on currency
+        const amount = Math.abs(tx.price);
+        const formattedAmount = tx.is_usd 
+            ? `${tx.is_income ? '+' : '-'}$${amount.toFixed(2)}` 
+            : `${tx.is_income ? '+' : '-'}${amount.toLocaleString('fa-IR')} تومان`;
+        
+        // Check if category and source names contain Persian
+        const hasPersianCategory = /[\u0600-\u06FF]/.test(tx.category_name);
+        const hasPersianSource = /[\u0600-\u06FF]/.test(tx.source_name);
+        const categoryClass = hasPersianCategory ? 'font-vazir text-end' : '';
+        const sourceClass = hasPersianSource ? 'font-vazir text-end' : '';
+        
+        row.innerHTML = `
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="transaction-icon ${bgClass}">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div class="ms-3 flex-grow-1">
+                        <h6 class="mb-0 ${nameClass}">${tx.name}</h6>
+                        <small class="text-muted ${sourceClass}">${tx.source_name}</small>
+                    </div>
+                </div>
+            </td>
+            <td class="${categoryClass}">${tx.category_name}</td>
+            <td dir="ltr">${new Date(tx.date).toLocaleDateString('fa-IR')}</td>
+            <td class="${tx.is_income ? 'text-success' : 'text-danger'} ${tx.is_usd ? '' : 'font-vazir'}">${formattedAmount}</td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+// Update balance summary cards
+function updateBalanceSummary(totalUSD, totalToman) {
+    const usdBalanceEl = document.querySelector('#usdBalance');
+    const tomanBalanceEl = document.querySelector('#tomanBalance');
+    
+    if (usdBalanceEl) {
+        usdBalanceEl.textContent = `$${totalUSD.toFixed(2)}`;
+    }
+    if (tomanBalanceEl) {
+        tomanBalanceEl.textContent = `${totalToman.toLocaleString()} ₺`;
+    }
+}
+
+// Update transaction summary cards
+function updateTransactionSummary(totalIncome, totalExpense) {
+    const incomeEl = document.querySelector('#totalIncome');
+    const expenseEl = document.querySelector('#totalExpense');
+    
+    if (incomeEl) {
+        incomeEl.textContent = `$${totalIncome.toFixed(2)}`;
+    }
+    if (expenseEl) {
+        expenseEl.textContent = `$${totalExpense.toFixed(2)}`;
+    }
 } 

@@ -15,7 +15,8 @@ class TransactionInfo(BaseModel):
     """Information extracted from transaction text"""
     name: str = Field(description="Name or description of the transaction")
     date: str = Field(description="Date of the transaction in YYYY-MM-DD format")
-    price_in_dollar: float = Field(description="Price in USD")
+    price: float = Field(description="Price amount in the original currency (USD or Toman)")
+    is_usd: bool = Field(description="Whether the price is in USD (True) or Toman (False)")
     category_name: str = Field(description="Category of the transaction")
     source_name: str = Field(description="Source of the transaction (e.g., Cash, Bank Account)")
     notes: Optional[str] = Field(description="Additional notes about the transaction", default=None)
@@ -43,6 +44,11 @@ class TransactionParser:
             
             {category_instructions}
             {source_instructions}
+            
+            For currency detection:
+            - If the text mentions dollars, USD, or $ symbols, set is_usd to true
+            - If the text mentions toman, rial, تومان, or ریال, set is_usd to false
+            - If no currency is specified, make your best guess based on context
             
             If any information is missing, make a reasonable guess based on the context.
             Today's date is {current_date}.
@@ -143,23 +149,40 @@ if __name__ == "__main__":
         available_sources=available_sources
     )
     
-    # Sample transaction texts
+    # Sample transaction texts in English and Farsi
     sample_texts = [
+        # English examples
         "I spent 50 dollars on groceries at Walmart yesterday using my bank account",
-        "Bought a movie ticket for 15 USD",
-        "Paid 200 dollars for electricity bill from my USD account last week"
+        "Bought a movie ticket for 15 USD with cash today",
+        "Paid 200 dollars for electricity bill from my USD account last week",
+        
+        # Farsi/Mixed examples
+        "خرید نان به مبلغ ۵۰۰۰۰ تومان از نانوایی محلی با پول نقد",  # Bread purchase for 50000 Toman with cash
+        "پرداخت قبض برق به مبلغ ۲۵۰۰۰۰ تومان از حساب بانکی",  # Electricity bill payment for 250000 Toman from bank account
+        "خرید لباس به مبلغ ۸۰۰۰۰۰ تومان با کارت بانکی",  # Clothes purchase for 800000 Toman with bank card
+        "هزینه تاکسی ۳۵۰۰۰ تومان پرداخت نقدی",  # Taxi fare 35000 Toman cash payment
+        "پرداخت ۲۰ دلار برای اشتراک نتفلیکس"  # Paid 20 dollars for Netflix subscription
     ]
     
     # Process each sample text
     for text in sample_texts:
         print(f"\nProcessing text: {text}")
-        transaction = parser.parse_transaction(text)
-        if transaction:
+        try:
+            transaction = parser.parse_transaction(text)
             print("Extracted information:")
             print(f"Name: {transaction.name}")
             print(f"Date: {transaction.date}")
-            print(f"Price in USD: ${transaction.price_in_dollar:.2f}")
+            
+            # Display price with appropriate currency
+            if transaction.is_usd:
+                print(f"Price: ${transaction.price:.2f} USD")
+            else:
+                print(f"Price: {transaction.price:,.0f} Toman")
+                
+            print(f"Currency: {'USD' if transaction.is_usd else 'Toman'}")
             print(f"Category: {transaction.category_name}")
             print(f"Source: {transaction.source_name}")
             if transaction.notes:
-                print(f"Notes: {transaction.notes}") 
+                print(f"Notes: {transaction.notes}")
+        except Exception as e:
+            print(f"Error: {e}") 

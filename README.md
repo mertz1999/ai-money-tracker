@@ -10,6 +10,9 @@ A Python-based money tracking system that uses AI to parse transaction informati
 - Transaction categorization and source tracking
 - Report generation with charts
 - Cached currency exchange rates
+- Beautiful web dashboard with Bootstrap
+- RESTful API built with FastAPI
+- Optional Nginx setup for production deployment
 
 ## Project Structure
 
@@ -20,7 +23,18 @@ ai-money-tracker/
 │   ├── currency_exchange.py # Currency conversion
 │   ├── transaction_parser.py # AI-powered transaction parsing
 │   └── reports.py          # Report generation
+├── routers/
+│   ├── categories.py       # Categories endpoints
+│   ├── sources.py          # Sources endpoints
+│   └── transactions.py     # Transactions endpoints
+├── public/                 # Web interface files
+│   ├── css/                # CSS stylesheets
+│   ├── js/                 # JavaScript files
+│   └── index.html          # Main dashboard
 ├── reports/                # Generated reports and charts
+├── main.py                 # FastAPI application with run script
+├── nginx.conf              # Nginx configuration for UI
+├── start_servers.sh        # Script to start both FastAPI and Nginx
 ├── .env                    # Environment variables
 ├── requirements.txt        # Project dependencies
 └── create_database.py      # Database initialization
@@ -44,7 +58,43 @@ ai-money-tracker/
    python create_database.py
    ```
 
+## Running the Application
+
+### Option 1: FastAPI only (Development)
+Run the FastAPI server:
+```bash
+python main.py
+```
+Access the API at http://localhost:9000
+
+### Option 2: Nginx + FastAPI (Recommended for Production)
+For a production-like setup with Nginx serving the UI and FastAPI handling only the API:
+```bash
+./start_servers.sh
+```
+Access the UI at http://localhost:8080 and the API at http://localhost:9000
+
+For detailed instructions on the Nginx setup, see [NGINX_SETUP.md](NGINX_SETUP.md).
+
+## API Documentation
+
+When running the application, you can access the API documentation at:
+- http://localhost:9000/docs (FastAPI only setup)
+- http://localhost:8080/docs (Nginx + FastAPI setup)
+
 ## Usage
+
+### Web Interface
+
+The web interface provides a beautiful dashboard for managing your finances:
+
+- View your total balance in USD and Toman
+- Track your expenses by category
+- Manage your sources (bank accounts, cash, etc.)
+- Add transactions and income
+- Generate reports
+
+The UI interacts directly with the RESTful API endpoints.
 
 ### Transaction Parsing
 ```python
@@ -64,34 +114,46 @@ report = reports.generate_sources_report()
 print(report)
 ```
 
+### API Endpoints
+
+The system provides RESTful API endpoints for integration:
+
+- `GET /api/categories` - Get all categories
+- `GET /api/sources` - Get all sources
+- `GET /api/transactions` - Get all transactions
+- `POST /api/parse_transaction` - Parse transaction text
+- `POST /api/add_transaction` - Add a new transaction
+- `POST /api/add_income` - Add income
+- `POST /api/add_source` - Add a new source
+
 ## TODO List
 
 ### Core Functionality
-- [ ] Enhance transaction parsing
-  - [ ] Add more test cases for text-to-transaction conversion
-  - [ ] Define and implement input schema validation
-  - [ ] Improve error handling for malformed inputs
-  - [ ] Add support for more transaction types
+- [x] Enhance transaction parsing
+  - [x] Add more test cases for text-to-transaction conversion
+  - [x] Define and implement input schema validation
+  - [x] Improve error handling for malformed inputs
+  - [x] Add support for more transaction types
 
 ### Database Integration
-- [ ] Connect transaction parser to database
-  - [ ] Implement transaction insertion
-  - [ ] Add transaction validation
-  - [ ] Create transaction update/delete functionality
-- [ ] Implement source management
-  - [ ] Add functionality to add new sources
-  - [ ] Add functionality to remove sources
-  - [ ] Add source balance tracking
-- [ ] Handle income transactions
-  - [ ] Define income categories
-  - [ ] Implement income tracking
-  - [ ] Add income reports
+- [x] Connect transaction parser to database
+  - [x] Implement transaction insertion
+  - [x] Add transaction validation
+  - [x] Create transaction update/delete functionality
+- [x] Implement source management
+  - [x] Add functionality to add new sources
+  - [x] Add functionality to remove sources
+  - [x] Add source balance tracking
+- [x] Handle income transactions
+  - [x] Define income categories
+  - [x] Implement income tracking
+  - [x] Add income reports
 
 ### Transaction Management
-- [ ] Implement transaction balance updates
-  - [ ] Add automatic source balance updates
-  - [ ] Handle currency conversions
-  - [ ] Add transaction history tracking
+- [x] Implement transaction balance updates
+  - [x] Add automatic source balance updates
+  - [x] Handle currency conversions
+  - [x] Add transaction history tracking
 
 ### User Interface
 - [ ] Create Telegram bot integration
@@ -99,19 +161,28 @@ print(report)
   - [ ] Implement transaction input via bot
   - [ ] Add report generation commands
   - [ ] Add source management commands
-- [ ] Develop web interface
-  - [ ] Create Bootstrap-based HTML pages
-  - [ ] Implement dashboard
-  - [ ] Add transaction management interface
-  - [ ] Add report visualization
-  - [ ] Add source management interface
+- [x] Develop web interface
+  - [x] Create Bootstrap-based HTML pages
+  - [x] Implement dashboard
+  - [x] Add transaction management interface
+  - [x] Add report visualization
+  - [x] Add source management interface
 
 ### System Improvements
+- [x] Migrate from Flask to FastAPI
+  - [x] Create FastAPI application
+  - [x] Implement Pydantic models
+  - [x] Add dependency injection
+  - [x] Setup automatic documentation
+- [x] Deploy with Nginx
+  - [x] Create Nginx configuration
+  - [x] Setup static file serving
+  - [x] Configure API proxying
 - [ ] Make the system more dynamic
   - [ ] Add configuration management
   - [ ] Implement plugin system
   - [ ] Add support for more currencies
-  - [ ] Create API endpoints
+  - [x] Create API endpoints
   - [ ] Add user authentication
   - [ ] Implement data backup/restore
 

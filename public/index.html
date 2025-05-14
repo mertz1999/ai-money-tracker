@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Money Tracker Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="img/logo.svg" alt="AI Money Tracker" class="logo">
+            <h3>Money Tracker</h3>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="active"><a href="#dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#transactions"><i class="fas fa-exchange-alt"></i> Transactions</a></li>
+            <li><a href="#sources"><i class="fas fa-wallet"></i> Sources</a></li>
+            <li><a href="#categories"><i class="fas fa-tags"></i> Categories</a></li>
+            <li><a href="#reports"><i class="fas fa-chart-pie"></i> Reports</a></li>
+            <li><a href="#settings"><i class="fas fa-cog"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <span><i class="fas fa-code"></i> AI-Powered</span>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navigation -->
+        <nav class="top-nav">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center">
+                    <button id="sidebar-toggle" class="btn">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="d-flex align-items-center">
+                        <div class="dropdown">
+                            <button class="btn dropdown-toggle" type="button" id="currencyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-dollar-sign"></i> USD
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="currencyDropdown">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-dollar-sign"></i> USD</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-money-bill-wave"></i> Toman</a></li>
+                            </ul>
+                        </div>
+                        <div class="dropdown ms-3">
+                            <button class="btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle"></i>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div class="container-fluid dashboard-content">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h1 class="page-title">Dashboard</h1>
+                    <p class="text-muted">Welcome to your financial overview</p>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card summary-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Total Balance</h6>
+                                    <h3 class="card-title mb-0">$5,240.50</h3>
+                                    <p class="text-success mb-0"><i class="fas fa-arrow-up"></i> 3.5%</p>
+                                </div>
+                                <div class="card-icon bg-primary">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card summary-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Income</h6>
+                                    <h3 class="card-title mb-0">$1,950.00</h3>
+                                    <p class="text-success mb-0"><i class="fas fa-arrow-up"></i> 5.2%</p>
+                                </div>
+                                <div class="card-icon bg-success">
+                                    <i class="fas fa-arrow-down"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card summary-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Expenses</h6>
+                                    <h3 class="card-title mb-0">$1,150.25</h3>
+                                    <p class="text-danger mb-0"><i class="fas fa-arrow-up"></i> 2.8%</p>
+                                </div>
+                                <div class="card-icon bg-danger">
+                                    <i class="fas fa-arrow-up"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card summary-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h6 class="card-subtitle mb-2 text-muted">Exchange Rate</h6>
+                                    <h3 class="card-title mb-0">52,000</h3>
+                                    <p class="text-muted mb-0">USD to Toman</p>
+                                </div>
+                                <div class="card-icon bg-info">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mb-4">
+                <div class="col-md-8 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Spending Overview</h5>
+                            <div class="card-actions">
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary active">Week</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary">Month</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary">Year</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="spendingChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Expense Categories</h5>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="categoryChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sources and Recent Transactions -->
+            <div class="row">
+                <div class="col-md-5 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Sources</h5>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addSourceModal">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table sources-table" id="sources-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Source</th>
+                                            <th>Type</th>
+                                            <th>Balance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Sources will be loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Recent Transactions</h5>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                                    <i class="fas fa-plus"></i> Add
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table transactions-table" id="transactions-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Category</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Transactions will be loaded dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center">
+                            <a href="#" class="btn btn-link">View All Transactions</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Transaction Modal -->
+    <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTransactionModalLabel">Add Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addTransactionForm">
+                        <div class="mb-3">
+                            <label for="transactionDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="transactionDescription" rows="3" placeholder="Describe your transaction (e.g., 'I spent $50 on groceries at Walmart')"></textarea>
+                            <small class="form-text text-muted">Our AI will parse this description automatically.</small>
+                        </div>
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-secondary" id="parseTransactionBtn">Parse Description</button>
+                        </div>
+                        <div id="parsedTransactionDetails" style="display: none;">
+                            <div class="mb-3">
+                                <label for="transactionName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="transactionName">
+                            </div>
+                            <div class="mb-3">
+                                <label for="transactionDate" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="transactionDate">
+                            </div>
+                            <div class="mb-3">
+                                <label for="transactionAmount" class="form-label">Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="transactionAmount" step="0.01">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transactionCurrency" class="form-label">Currency</label>
+                                <select class="form-select" id="transactionCurrency">
+                                    <option value="true">USD</option>
+                                    <option value="false">Toman</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transactionCategory" class="form-label">Category</label>
+                                <select class="form-select" id="transactionCategory">
+                                    <!-- Categories will be loaded dynamically -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="transactionSource" class="form-label">Source</label>
+                                <select class="form-select" id="transactionSource">
+                                    <!-- Sources will be loaded dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveTransactionBtn">Save Transaction</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Source Modal -->
+    <div class="modal fade" id="addSourceModal" tabindex="-1" aria-labelledby="addSourceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSourceModalLabel">Add Source</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addSourceForm">
+                        <div class="mb-3">
+                            <label for="sourceName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="sourceName" placeholder="e.g., Bank Account, Cash">
+                        </div>
+                        <div class="mb-3">
+                            <label for="sourceType" class="form-label">Type</label>
+                            <select class="form-select" id="sourceType">
+                                <option value="true">Bank</option>
+                                <option value="false">Cash</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sourceCurrency" class="form-label">Currency</label>
+                            <select class="form-select" id="sourceCurrency">
+                                <option value="true">USD</option>
+                                <option value="false">Toman</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sourceValue" class="form-label">Initial Balance</label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="sourceValueCurrency">$</span>
+                                <input type="number" class="form-control" id="sourceValue" step="0.01" value="0">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveSourceBtn">Save Source</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <!-- Custom JS -->
+    <script src="js/main.js"></script>
+    <script src="js/charts.js"></script>
+</body>
+</html> 

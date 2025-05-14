@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Logo</title>
+</head>
+<body>
+    <canvas id="logoCanvas" width="100" height="100" style="border:1px solid #d3d3d3;"></canvas>
+    <br>
+    <button onclick="downloadLogo()">Download Logo</button>
+    
+    <script>
+        // Draw the logo
+        const canvas = document.getElementById('logoCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Draw outer circle
+        ctx.beginPath();
+        ctx.arc(50, 50, 45, 0, 2 * Math.PI);
+        ctx.fillStyle = '#4e73df';
+        ctx.fill();
+        
+        // Draw inner circle
+        ctx.beginPath();
+        ctx.arc(50, 50, 35, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        
+        // Draw vertical line
+        ctx.beginPath();
+        ctx.moveTo(50, 15);
+        ctx.lineTo(50, 85);
+        ctx.strokeStyle = '#4e73df';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        
+        // Draw horizontal lines
+        const horizontalLines = [
+            {y: 35, x1: 30, x2: 70},
+            {y: 50, x1: 25, x2: 75},
+            {y: 65, x1: 30, x2: 70},
+            {y: 25, x1: 40, x2: 60},
+            {y: 75, x1: 40, x2: 60}
+        ];
+        
+        horizontalLines.forEach(line => {
+            ctx.beginPath();
+            ctx.moveTo(line.x1, line.y);
+            ctx.lineTo(line.x2, line.y);
+            ctx.strokeStyle = '#4e73df';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        });
+        
+        // Draw center circle
+        ctx.beginPath();
+        ctx.arc(50, 50, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = '#4e73df';
+        ctx.fill();
+        
+        // Draw dollar sign
+        ctx.font = 'bold 12px Arial';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$', 50, 50);
+        
+        // Function to download the logo
+        function downloadLogo() {
+            const link = document.createElement('a');
+            link.download = 'logo.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html> 

@@ -236,11 +236,35 @@ class Database:
         conn.close()
         return result
 
-    def get_all_transactions(self):
-        """Get all transactions"""
+    def get_all_transactions(self, month=None):
+        """Get all transactions, optionally filtered by month
+        
+        Args:
+            month: Optional month number (1-12). If provided, returns only transactions for that month
+                  in the current year.
+        """
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM transactions")
+        
+        if month is not None:
+            # Get transactions for the specified month in the current year
+            year = datetime.now().year
+            start_date = f"{year}-{month:02d}-01"
+            
+            # Handle the end date for different months
+            if month == 12:
+                end_date = f"{year + 1}-01-01"
+            else:
+                end_date = f"{year}-{month + 1:02d}-01"
+            
+            cursor.execute("""
+                SELECT * FROM transactions 
+                WHERE date >= ? AND date < ?
+                ORDER BY date DESC
+            """, (start_date, end_date))
+        else:
+            cursor.execute("SELECT * FROM transactions ORDER BY date DESC")
+        
         result = cursor.fetchall()
         conn.close()
         return result

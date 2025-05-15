@@ -26,10 +26,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Set current month in selector
+    const monthSelector = document.getElementById('monthSelector');
+    if (monthSelector) {
+        monthSelector.value = currentMonth;
+        
+        // Add month change handler
+        monthSelector.addEventListener('change', function(e) {
+            currentMonth = parseInt(e.target.value);
+            loadTransactions(currentMonth);
+        });
+    }
+    
     // Load initial data
     loadCategories();
     loadSources();
-    loadTransactions();
+    loadTransactions(currentMonth);
     
     // Parse Transaction Button
     const parseTransactionBtn = document.getElementById('parseTransactionBtn');
@@ -116,24 +128,33 @@ function loadSources() {
         });
 }
 
+// Add global state for currency displays
+let displayInUSD = true;
+let currentMonth = new Date().getMonth() + 1; // 1-12
+let currentPage = 1;
+const itemsPerPage = 5;
+let allTransactions = []; // Store all transactions
+let currentExchangeRate = null;
+let sourceDisplayMode = 'default'; // 'default', 'usd', or 'toman'
+
 // Load transactions from API
-function loadTransactions() {
-    fetch('http://localhost:9000/api/transactions')
+function loadTransactions(month = currentMonth) {
+    const url = `http://localhost:9000/api/transactions?month=${month}`;
+    
+    fetch(url)
         .then(response => response.json())
         .then(transactions => {
-            console.log('Transactions loaded:', transactions);
+            console.log('Transactions loaded for month:', month, transactions);
             
-            // Process transactions to match our display format
-            const processedTransactions = transactions.map(tx => ({
+            // Store all transactions
+            allTransactions = transactions.map(tx => ({
                 ...tx,
                 // Always use price_in_dollar as the base price
                 price: tx.price_in_dollar
             }));
             
-            updateTransactionsTable(processedTransactions);
-            
             // Calculate totals for transaction stats
-            const totals = processedTransactions.reduce((acc, tx) => {
+            const totals = allTransactions.reduce((acc, tx) => {
                 const amount = Math.abs(tx.price_in_dollar);
                 if (tx.is_income) {
                     acc.income += amount;
@@ -144,6 +165,9 @@ function loadTransactions() {
             }, { income: 0, expense: 0 });
             
             updateTransactionSummary(totals.income, totals.expense);
+            
+            // Update table with first page
+            updateTransactionsTable(1);
         })
         .catch(error => {
             console.error('Error loading transactions:', error);
@@ -380,17 +404,34 @@ function updateSourcesTable(sources) {
         let iconClass = source.bank ? 'fa-university' : 'fa-wallet';
         let bgClass = source.usd ? 'bg-success' : 'bg-primary';
         
-        // Format value based on currency
-        const formattedValue = source.usd 
-            ? `$${source.value.toFixed(2)}` 
-            : `${source.value.toLocaleString()} T`;
+        // Calculate values in different currencies
+        let valueInUSD, valueInToman, defaultValue;
+        if (source.usd) {
+            valueInUSD = source.value;
+            valueInToman = source.value * currentExchangeRate;
+            defaultValue = `$${source.value.toFixed(2)}`;
+        } else {
+            valueInUSD = source.value / currentExchangeRate;
+            valueInToman = source.value;
+            defaultValue = `${source.value.toLocaleString()} T`;
+        }
+        
+        // Format value based on display mode
+        let formattedValue;
+        switch (sourceDisplayMode) {
+            case 'usd':
+                formattedValue = `$${valueInUSD.toFixed(2)}`;
+                break;
+            case 'toman':
+                formattedValue = `${valueInToman.toLocaleString()} T`;
+                break;
+            default:
+                formattedValue = defaultValue;
+        }
             
         // Update totals
-        if (source.usd) {
-            totalUSD += source.value;
-        } else {
-            totalToman += source.value;
-        }
+        totalUSD += valueInUSD;
+        totalToman += valueInToman;
         
         row.innerHTML = `
             <td>
@@ -404,30 +445,68 @@ function updateSourcesTable(sources) {
                 </div>
             </td>
             <td>${source.bank ? 'Bank' : 'Cash'}</td>
-            <td>${formattedValue}</td>
+            <td class="source-value" 
+                data-usd="${valueInUSD.toFixed(2)}"
+                data-toman="${valueInToman.toLocaleString()}"
+                data-default="${defaultValue}">
+                ${formattedValue}
+            </td>
         `;
         
         tbody.appendChild(row);
     });
     
-    // Update summary cards
+    // Update summary cards with totals
     updateBalanceSummary(totalUSD, totalToman);
 }
 
-// Add global state for currency display
-let displayInUSD = true;
+// Function to toggle source display mode
+function toggleSourceDisplayMode(mode) {
+    sourceDisplayMode = mode;
+    
+    // Update all source value cells
+    const sourceCells = document.querySelectorAll('.source-value');
+    sourceCells.forEach(cell => {
+        let value;
+        switch (mode) {
+            case 'usd':
+                value = `$${cell.getAttribute('data-usd')}`;
+                break;
+            case 'toman':
+                value = `${cell.getAttribute('data-toman')} T`;
+                break;
+            default:
+                value = cell.getAttribute('data-default');
+        }
+        cell.textContent = value;
+    });
+    
+    // Update the toggle button states
+    const buttons = document.querySelectorAll('.source-currency-toggle');
+    buttons.forEach(button => {
+        button.classList.toggle('active', button.getAttribute('data-mode') === mode);
+    });
+}
 
-// Update transactions table
-function updateTransactionsTable(transactions) {
+// Update transactions table with pagination
+function updateTransactionsTable(page = 1) {
+    currentPage = page;
     const tbody = document.querySelector('#transactions-table tbody');
-    if (!tbody) return;
+    const paginationContainer = document.querySelector('#transactionsPagination');
+    if (!tbody || !allTransactions) return;
+    
+    // Calculate pagination
+    const totalItems = allTransactions.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+    
+    // Get current page transactions
+    const currentTransactions = allTransactions.slice(startIndex, endIndex);
     
     tbody.innerHTML = '';
     
-    // Sort transactions by date (most recent first)
-    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    transactions.forEach(tx => {
+    currentTransactions.forEach(tx => {
         const row = document.createElement('tr');
         
         // Determine icon based on category
@@ -501,6 +580,41 @@ function updateTransactionsTable(transactions) {
         
         tbody.appendChild(row);
     });
+    
+    // Update pagination UI
+    if (paginationContainer) {
+        let paginationHTML = `
+            <nav aria-label="Transaction navigation">
+                <ul class="pagination justify-content-center mb-0">
+                    <li class="page-item ${page === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="updateTransactionsTable(${page - 1}); return false;">
+                            Previous
+                        </a>
+                    </li>
+        `;
+        
+        for (let i = 1; i <= totalPages; i++) {
+            paginationHTML += `
+                <li class="page-item ${i === page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="updateTransactionsTable(${i}); return false;">
+                        ${i}
+                    </a>
+                </li>
+            `;
+        }
+        
+        paginationHTML += `
+                    <li class="page-item ${page === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" onclick="updateTransactionsTable(${page + 1}); return false;">
+                            Next
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        `;
+        
+        paginationContainer.innerHTML = paginationHTML;
+    }
 }
 
 // Add currency toggle function
@@ -562,7 +676,10 @@ function fetchExchangeRate(live = false) {
         .then(response => response.json())
         .then(data => {
             console.log('Exchange rate loaded:', data);
+            currentExchangeRate = data.rate;
             updateExchangeRateDisplay(data);
+            // Reload sources to update with new exchange rate
+            loadSources();
         })
         .catch(error => {
             console.error('Error loading exchange rate:', error);

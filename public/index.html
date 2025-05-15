@@ -25,7 +25,6 @@
             <li><a href="#transactions"><i class="fas fa-exchange-alt"></i> Transactions</a></li>
             <li><a href="#sources"><i class="fas fa-wallet"></i> Sources</a></li>
             <li><a href="#categories"><i class="fas fa-tags"></i> Categories</a></li>
-            <li><a href="#reports"><i class="fas fa-chart-pie"></i> Reports</a></li>
             <li><a href="#settings"><i class="fas fa-cog"></i> Settings</a></li>
         </ul>
         <div class="sidebar-footer">
@@ -85,7 +84,7 @@
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <h6 class="card-subtitle mb-2 text-muted">Total Balance</h6>
-                                    <h3 class="card-title mb-0">$5,240.50</h3>
+                                    <h3 class="card-title mb-0" id="totalBalance">$5,240.50</h3>
                                     <p class="text-success mb-0"><i class="fas fa-arrow-up"></i> 3.5%</p>
                                 </div>
                                 <div class="card-icon bg-primary">
@@ -101,7 +100,7 @@
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <h6 class="card-subtitle mb-2 text-muted">Income</h6>
-                                    <h3 class="card-title mb-0">$1,950.00</h3>
+                                    <h3 class="card-title mb-0" id="totalIncome">$1,950.00</h3>
                                     <p class="text-success mb-0"><i class="fas fa-arrow-up"></i> 5.2%</p>
                                 </div>
                                 <div class="card-icon bg-success">
@@ -117,7 +116,7 @@
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <h6 class="card-subtitle mb-2 text-muted">Expenses</h6>
-                                    <h3 class="card-title mb-0">$1,150.25</h3>
+                                    <h3 class="card-title mb-0" id="totalExpense">$1,150.25</h3>
                                     <p class="text-danger mb-0"><i class="fas fa-arrow-up"></i> 2.8%</p>
                                 </div>
                                 <div class="card-icon bg-danger">
@@ -133,8 +132,13 @@
                             <div class="d-flex justify-content-between">
                                 <div>
                                     <h6 class="card-subtitle mb-2 text-muted">Exchange Rate</h6>
-                                    <h3 class="card-title mb-0">52,000</h3>
-                                    <p class="text-muted mb-0">USD to Toman</p>
+                                    <h3 class="card-title mb-0" id="summaryExchangeRate">52,000</h3>
+                                    <p class="text-muted mb-0 d-flex align-items-center">
+                                        USD to Toman
+                                        <button class="btn btn-sm btn-outline-info ms-2" onclick="fetchExchangeRate(true)" title="Refresh rate">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                    </p>
                                 </div>
                                 <div class="card-icon bg-info">
                                     <i class="fas fa-exchange-alt"></i>
@@ -145,52 +149,35 @@
                 </div>
             </div>
 
-            <!-- Charts Row -->
-            <div class="row mb-4">
-                <div class="col-md-8 mb-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Spending Overview</h5>
-                            <div class="card-actions">
-                                <div class="btn-group" role="group">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary active">Week</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary">Month</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary">Year</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="spendingChart" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">Expense Categories</h5>
-                            <div class="card-actions">
-                                <button class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="categoryChart" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Sources and Recent Transactions -->
             <div class="row">
                 <div class="col-md-5 mb-3">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title">Sources</h5>
-                            <div class="card-actions">
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addSourceModal">
-                                    <i class="fas fa-plus"></i> Add
-                                </button>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Sources</h5>
+                                <div class="card-actions">
+                                    <div class="btn-group me-2">
+                                        <button class="btn btn-sm btn-outline-secondary source-currency-toggle active" 
+                                                data-mode="default" 
+                                                onclick="toggleSourceDisplayMode('default')">
+                                            Default
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary source-currency-toggle" 
+                                                data-mode="usd" 
+                                                onclick="toggleSourceDisplayMode('usd')">
+                                            USD
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary source-currency-toggle" 
+                                                data-mode="toman" 
+                                                onclick="toggleSourceDisplayMode('toman')">
+                                            Toman
+                                        </button>
+                                    </div>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addSourceModal">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -214,11 +201,30 @@
                 <div class="col-md-7 mb-3">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="card-title">Recent Transactions</h5>
-                            <div class="card-actions">
-                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
-                                    <i class="fas fa-plus"></i> Add
-                                </button>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">Recent Transactions</h5>
+                                <div class="card-actions">
+                                    <select class="form-select form-select-sm me-2" id="monthSelector" style="width: auto; display: inline-block;">
+                                        <option value="1">January</option>
+                                        <option value="2">February</option>
+                                        <option value="3">March</option>
+                                        <option value="4">April</option>
+                                        <option value="5">May</option>
+                                        <option value="6">June</option>
+                                        <option value="7">July</option>
+                                        <option value="8">August</option>
+                                        <option value="9">September</option>
+                                        <option value="10">October</option>
+                                        <option value="11">November</option>
+                                        <option value="12">December</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-secondary me-2" id="toggleCurrencyBtn">
+                                        <i class="fas fa-exchange-alt"></i> Show in Toman
+                                    </button>
+                                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body p-0">
@@ -238,8 +244,8 @@
                                 </table>
                             </div>
                         </div>
-                        <div class="card-footer text-center">
-                            <a href="#" class="btn btn-link">View All Transactions</a>
+                        <div class="card-footer">
+                            <div id="transactionsPagination"></div>
                         </div>
                     </div>
                 </div>
@@ -358,10 +364,7 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
     <!-- Custom JS -->
     <script src="js/main.js"></script>
-    <script src="js/charts.js"></script>
 </body>
 </html> 

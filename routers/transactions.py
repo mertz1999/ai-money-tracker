@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body, Query
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import date, datetime
@@ -65,9 +65,12 @@ def get_parser_dependency():
 
 # API routes
 @router.get("/api/transactions", response_model=List[Transaction])
-async def get_transactions(db=Depends(get_db_dependency)):
-    """Get all transactions"""
-    transactions = db.get_all_transactions()
+async def get_transactions(
+    month: Optional[int] = Query(None, ge=1, le=12, description="Month number (1-12)"),
+    db=Depends(get_db_dependency)
+):
+    """Get all transactions, optionally filtered by month"""
+    transactions = db.get_all_transactions(month=month)
     result = []
     categories = {cat[0]: cat[1] for cat in db.get_all_categories()}
     sources = {src[0]: src[1] for src in db.get_all_sources()}

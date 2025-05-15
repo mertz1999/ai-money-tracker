@@ -612,6 +612,18 @@ function updateTransactionSummary(totalIncome, totalExpense) {
 
 // Fetch and display exchange rate
 function fetchExchangeRate(live = false) {
+    // Get button elements
+    const refreshBtn = document.getElementById('refreshExchangeBtn');
+    const icon = refreshBtn?.querySelector('.fa-sync-alt');
+    const spinner = refreshBtn?.querySelector('.spinner-border');
+    
+    // Show loading state
+    if (refreshBtn && live) {
+        refreshBtn.disabled = true;
+        icon.classList.add('d-none');
+        spinner.classList.remove('d-none');
+    }
+    
     fetch(`/api/exchange_rate?live=${live}`)
         .then(response => response.json())
         .then(data => {
@@ -627,6 +639,14 @@ function fetchExchangeRate(live = false) {
             const summaryExchangeRate = document.getElementById('summaryExchangeRate');
             if (summaryExchangeRate) {
                 summaryExchangeRate.innerHTML = '<span class="text-danger">Failed to load</span>';
+            }
+        })
+        .finally(() => {
+            // Reset button state if it was a manual refresh
+            if (refreshBtn && live) {
+                refreshBtn.disabled = false;
+                icon.classList.remove('d-none');
+                spinner.classList.add('d-none');
             }
         });
 }

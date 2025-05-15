@@ -57,8 +57,15 @@
                         <h3 class="card-title mb-0" id="summaryExchangeRate">52,000</h3>
                         <p class="text-muted mb-0 d-flex align-items-center">
                             USD to Toman
-                            <button class="btn btn-sm btn-outline-info ms-2" onclick="fetchExchangeRate(true)" title="Refresh rate">
+                            <button class="btn btn-sm btn-outline-info ms-2 d-flex align-items-center justify-content-center" 
+                                    id="refreshExchangeBtn" 
+                                    onclick="fetchExchangeRate(true)" 
+                                    title="Refresh rate"
+                                    style="width: 32px; height: 32px;">
                                 <i class="fas fa-sync-alt"></i>
+                                <div class="spinner-border spinner-border-sm position-absolute d-none" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
                             </button>
                         </p>
                     </div>

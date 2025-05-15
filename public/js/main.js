@@ -26,23 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Set current month in selector
-    const monthSelector = document.getElementById('monthSelector');
-    if (monthSelector) {
-        monthSelector.value = currentMonth;
-        
-        // Add month change handler
-        monthSelector.addEventListener('change', function(e) {
-            currentMonth = parseInt(e.target.value);
-            loadTransactions(currentMonth);
-        });
-    }
-    
-    // Load initial data
-    loadCategories();
-    loadSources();
-    loadTransactions(currentMonth);
-    
     // Parse Transaction Button
     const parseTransactionBtn = document.getElementById('parseTransactionBtn');
     if (parseTransactionBtn) {
@@ -66,19 +49,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Refresh exchange rate every 30 minutes
     setInterval(() => fetchExchangeRate(), 30 * 60 * 1000);
-    
-    // Add event listener for currency toggle
-    const toggleBtn = document.getElementById('toggleCurrencyBtn');
-    if (toggleBtn) {
-        console.log('Toggle button found, adding event listener');
-        toggleBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Toggle button clicked');
-            toggleTransactionCurrency();
-        });
-    } else {
-        console.log('Toggle button not found');
-    }
 });
 
 // Load categories from API
@@ -139,35 +109,25 @@ let sourceDisplayMode = 'default'; // 'default', 'usd', or 'toman'
 
 // Load transactions from API
 function loadTransactions(month = currentMonth) {
-    const url = `http://localhost:9000/api/transactions?month=${month}`;
-    
-    fetch(url)
+    fetch(`http://localhost:9000/api/transactions?month=${month}`)
         .then(response => response.json())
         .then(transactions => {
-            console.log('Transactions loaded for month:', month, transactions);
-            
             // Store all transactions
-            allTransactions = transactions.map(tx => ({
-                ...tx,
-                // Always use price_in_dollar as the base price
-                price: tx.price_in_dollar
-            }));
+            allTransactions = transactions;
             
             // Calculate totals for transaction stats
-            const totals = allTransactions.reduce((acc, tx) => {
-                const amount = Math.abs(tx.price_in_dollar);
+            const totals = transactions.reduce((acc, tx) => {
                 if (tx.is_income) {
-                    acc.income += amount;
+                    acc.income += Math.abs(tx.price_in_dollar);
                 } else {
-                    acc.expense += amount;
+                    acc.expense += Math.abs(tx.price_in_dollar);
                 }
                 return acc;
             }, { income: 0, expense: 0 });
             
+            // Update summary and table
             updateTransactionSummary(totals.income, totals.expense);
-            
-            // Update table with first page
-            updateTransactionsTable(1);
+            updateTransactionsTable(1); // Reset to first page when loading new data
         })
         .catch(error => {
             console.error('Error loading transactions:', error);
@@ -617,13 +577,10 @@ function updateTransactionsTable(page = 1) {
     }
 }
 
-// Add currency toggle function
+// Function to toggle transaction currency display
 function toggleTransactionCurrency() {
-    console.log('Toggle function called. Current state:', displayInUSD);
-    
     // Toggle the state
     displayInUSD = !displayInUSD;
-    console.log('New state:', displayInUSD);
     
     // Update toggle button text
     const toggleBtn = document.getElementById('toggleCurrencyBtn');
@@ -633,13 +590,9 @@ function toggleTransactionCurrency() {
     
     // Update all amount cells
     const amountCells = document.querySelectorAll('.amount-cell');
-    console.log('Found amount cells:', amountCells.length);
-    
     amountCells.forEach(cell => {
         const usdAmount = cell.getAttribute('data-usd');
         const tomanAmount = cell.getAttribute('data-toman');
-        console.log('Cell data:', { usd: usdAmount, toman: tomanAmount });
-        
         cell.textContent = displayInUSD ? usdAmount : tomanAmount;
     });
 }

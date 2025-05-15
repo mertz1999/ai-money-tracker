@@ -67,12 +67,43 @@
                 { id: 'modals-container', file: 'components/modals.html' }
             ];
 
+            let loadedComponents = 0;
+            
             // Load each component
             components.forEach(component => {
                 fetch(component.file)
                     .then(response => response.text())
                     .then(html => {
                         document.getElementById(component.id).innerHTML = html;
+                        loadedComponents++;
+                        
+                        // Check if all components are loaded
+                        if (loadedComponents === components.length) {
+                            // Initialize month selector
+                            const monthSelector = document.getElementById('monthSelector');
+                            if (monthSelector) {
+                                const currentMonth = new Date().getMonth() + 1; // 1-12
+                                monthSelector.value = currentMonth;
+                                
+                                monthSelector.addEventListener('change', function() {
+                                    const selectedMonth = parseInt(this.value);
+                                    loadTransactions(selectedMonth);
+                                });
+                            }
+                            
+                            // Initialize currency toggle
+                            const toggleBtn = document.getElementById('toggleCurrencyBtn');
+                            if (toggleBtn) {
+                                toggleBtn.addEventListener('click', function() {
+                                    toggleTransactionCurrency();
+                                });
+                            }
+                            
+                            // Load initial data
+                            loadCategories();
+                            loadSources();
+                            loadTransactions(currentMonth);
+                        }
                     })
                     .catch(error => {
                         console.error(`Error loading ${component.file}:`, error);

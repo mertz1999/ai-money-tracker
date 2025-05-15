@@ -98,6 +98,24 @@
                                     toggleTransactionCurrency();
                                 });
                             }
+
+                            // Initialize parse transaction button
+                            const parseTransactionBtn = document.getElementById('parseTransactionBtn');
+                            if (parseTransactionBtn) {
+                                parseTransactionBtn.addEventListener('click', parseTransactionDescription);
+                            }
+
+                            // Initialize save transaction button
+                            const saveTransactionBtn = document.getElementById('saveTransactionBtn');
+                            if (saveTransactionBtn) {
+                                saveTransactionBtn.addEventListener('click', saveTransaction);
+                            }
+
+                            // Initialize save source button
+                            const saveSourceBtn = document.getElementById('saveSourceBtn');
+                            if (saveSourceBtn) {
+                                saveSourceBtn.addEventListener('click', saveSource);
+                            }
                             
                             // Load initial data
                             loadCategories();

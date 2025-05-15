@@ -14,7 +14,12 @@
                         <small class="form-text text-muted">Our AI will parse this description automatically.</small>
                     </div>
                     <div class="mb-3">
-                        <button type="button" class="btn btn-secondary" id="parseTransactionBtn">Parse Description</button>
+                        <button type="button" class="btn btn-secondary d-flex align-items-center justify-content-center gap-2" id="parseTransactionBtn" style="min-width: 140px;">
+                            <span class="button-text">Parse Description</span>
+                            <div class="spinner-border spinner-border-sm d-none" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </button>
                     </div>
                     <div id="parsedTransactionDetails" style="display: none;">
                         <div class="mb-3">

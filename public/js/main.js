@@ -26,24 +26,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Parse Transaction Button
-    const parseTransactionBtn = document.getElementById('parseTransactionBtn');
-    if (parseTransactionBtn) {
-        parseTransactionBtn.addEventListener('click', parseTransactionDescription);
-    }
-    
-    // Save Transaction Button
-    const saveTransactionBtn = document.getElementById('saveTransactionBtn');
-    if (saveTransactionBtn) {
-        saveTransactionBtn.addEventListener('click', saveTransaction);
-    }
-    
-    // Save Source Button
-    const saveSourceBtn = document.getElementById('saveSourceBtn');
-    if (saveSourceBtn) {
-        saveSourceBtn.addEventListener('click', saveSource);
-    }
-    
     // Load initial exchange rate
     fetchExchangeRate();
     
@@ -53,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load categories from API
 function loadCategories() {
-    fetch('http://localhost:9000/api/categories')
+    fetch('/api/categories')
         .then(response => response.json())
         .then(categories => {
             console.log('Categories loaded:', categories);
@@ -76,7 +58,7 @@ function loadCategories() {
 
 // Load sources from API
 function loadSources() {
-    fetch('http://localhost:9000/api/sources')
+    fetch('/api/sources')
         .then(response => response.json())
         .then(sources => {
             console.log('Sources loaded:', sources);
@@ -109,7 +91,7 @@ let sourceDisplayMode = 'default'; // 'default', 'usd', or 'toman'
 
 // Load transactions from API
 function loadTransactions(month = currentMonth) {
-    fetch(`http://localhost:9000/api/transactions?month=${month}`)
+    fetch(`/api/transactions?month=${month}`)
         .then(response => response.json())
         .then(transactions => {
             // Store all transactions
@@ -154,11 +136,15 @@ function parseTransactionDescription() {
     
     // Show loading state
     const parseBtn = document.getElementById('parseTransactionBtn');
-    const originalText = parseBtn.textContent;
-    parseBtn.textContent = 'Parsing...';
-    parseBtn.disabled = true;
+    const buttonText = parseBtn.querySelector('.button-text');
+    const spinner = parseBtn.querySelector('.spinner-border');
     
-    fetch('http://localhost:9000/api/parse_transaction', {
+    // Disable button and show spinner
+    parseBtn.disabled = true;
+    buttonText.style.opacity = '0';
+    spinner.classList.remove('d-none');
+    
+    fetch('/api/parse_transaction', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -207,8 +193,9 @@ function parseTransactionDescription() {
     })
     .finally(() => {
         // Reset button state
-        parseBtn.textContent = originalText;
         parseBtn.disabled = false;
+        buttonText.style.opacity = '1';
+        spinner.classList.add('d-none');
     });
 }
 
@@ -234,7 +221,7 @@ function saveTransaction() {
     saveBtn.disabled = true;
     
     // Send to API
-    fetch('http://localhost:9000/api/add_transaction', {
+    fetch('/api/add_transaction', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -303,7 +290,7 @@ function saveSource() {
     saveBtn.disabled = true;
     
     // Send to API
-    fetch('http://localhost:9000/api/add_source', {
+    fetch('/api/add_source', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -625,7 +612,7 @@ function updateTransactionSummary(totalIncome, totalExpense) {
 
 // Fetch and display exchange rate
 function fetchExchangeRate(live = false) {
-    fetch(`http://localhost:9000/api/exchange_rate?live=${live}`)
+    fetch(`/api/exchange_rate?live=${live}`)
         .then(response => response.json())
         .then(data => {
             console.log('Exchange rate loaded:', data);

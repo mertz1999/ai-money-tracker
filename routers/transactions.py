@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from datetime import date
+from datetime import date, datetime
 
 # Create router
 router = APIRouter()
@@ -46,6 +46,10 @@ class ParsedTransaction(BaseModel):
     source_name: str
     notes: Optional[str] = None
 
+class ExchangeRateResponse(BaseModel):
+    rate: float
+    timestamp: str
+
 # Create dependency functions that will be injected at runtime
 def get_db_dependency():
     from main import get_db
@@ -83,7 +87,7 @@ async def get_transactions(db=Depends(get_db_dependency)):
     return result
 
 @router.post("/api/add_transaction", response_model=TransactionResponse)
-async def add_transaction(transaction: TransactionCreate, db=Depends(get_db_dependency), exchange=Depends(get_exchange_dependency)):
+def add_transaction(transaction: TransactionCreate, db=Depends(get_db_dependency), exchange=Depends(get_exchange_dependency)):
     """Add a new transaction"""
     # Get category ID
     categories = {cat[1].lower(): cat[0] for cat in db.get_all_categories()}
@@ -106,6 +110,8 @@ async def add_transaction(transaction: TransactionCreate, db=Depends(get_db_depe
     
     # Get current exchange rate
     usd_rate = exchange.get_usd_rate(live=False)
+    if usd_rate is None:
+        raise HTTPException(status_code=503, detail="Failed to fetch exchange rate")
     
     # Convert price to USD if needed
     price_in_dollar = transaction.price if transaction.is_usd else transaction.price / usd_rate
@@ -127,7 +133,7 @@ async def add_transaction(transaction: TransactionCreate, db=Depends(get_db_depe
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/api/add_income", response_model=TransactionResponse)
-async def add_income(income: IncomeCreate, db=Depends(get_db_dependency), exchange=Depends(get_exchange_dependency)):
+def add_income(income: IncomeCreate, db=Depends(get_db_dependency), exchange=Depends(get_exchange_dependency)):
     """Add income to a source"""
     # Get category ID
     categories = {cat[1].lower(): cat[0] for cat in db.get_all_categories()}
@@ -150,6 +156,8 @@ async def add_income(income: IncomeCreate, db=Depends(get_db_dependency), exchan
     
     # Get current exchange rate
     usd_rate = exchange.get_usd_rate(live=False)
+    if usd_rate is None:
+        raise HTTPException(status_code=503, detail="Failed to fetch exchange rate")
     
     # Add income to database
     try:
@@ -181,5 +189,19 @@ async def parse_transaction(transaction_text: TransactionText, parser=Depends(ge
     try:
         transaction = parser.parse_transaction(text)
         return transaction.dict()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/api/exchange_rate", response_model=ExchangeRateResponse)
+def get_exchange_rate(live: bool = False, exchange=Depends(get_exchange_dependency)):
+    """Get the current USD to Toman exchange rate"""
+    try:
+        rate = exchange.get_usd_rate(live=live)
+        if rate is None:
+            raise HTTPException(status_code=503, detail="Failed to fetch exchange rate")
+        return {
+            "rate": rate,
+            "timestamp": datetime.now().isoformat()
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 

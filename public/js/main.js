@@ -48,6 +48,25 @@ document.addEventListener('DOMContentLoaded', function() {
     if (saveSourceBtn) {
         saveSourceBtn.addEventListener('click', saveSource);
     }
+    
+    // Load initial exchange rate
+    fetchExchangeRate();
+    
+    // Refresh exchange rate every 30 minutes
+    setInterval(() => fetchExchangeRate(), 30 * 60 * 1000);
+    
+    // Add event listener for currency toggle
+    const toggleBtn = document.getElementById('toggleCurrencyBtn');
+    if (toggleBtn) {
+        console.log('Toggle button found, adding event listener');
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Toggle button clicked');
+            toggleTransactionCurrency();
+        });
+    } else {
+        console.log('Toggle button not found');
+    }
 });
 
 // Load categories from API
@@ -104,11 +123,11 @@ function loadTransactions() {
         .then(transactions => {
             console.log('Transactions loaded:', transactions);
             
-            // Process transactions to calculate USD values
+            // Process transactions to match our display format
             const processedTransactions = transactions.map(tx => ({
                 ...tx,
-                price_in_dollar: tx.is_usd ? tx.price : tx.price / 50000, // Assuming 1 USD = 50000 Toman
-                is_income: tx.price > 0
+                // Always use price_in_dollar as the base price
+                price: tx.price_in_dollar
             }));
             
             updateTransactionsTable(processedTransactions);
@@ -128,7 +147,6 @@ function loadTransactions() {
         })
         .catch(error => {
             console.error('Error loading transactions:', error);
-            // Show error message to user
             const transactionsTable = document.querySelector('#transactions-table tbody');
             if (transactionsTable) {
                 transactionsTable.innerHTML = `
@@ -365,7 +383,7 @@ function updateSourcesTable(sources) {
         // Format value based on currency
         const formattedValue = source.usd 
             ? `$${source.value.toFixed(2)}` 
-            : `${source.value.toLocaleString()} ₺`;
+            : `${source.value.toLocaleString()} T`;
             
         // Update totals
         if (source.usd) {
@@ -396,6 +414,9 @@ function updateSourcesTable(sources) {
     updateBalanceSummary(totalUSD, totalToman);
 }
 
+// Add global state for currency display
+let displayInUSD = true;
+
 // Update transactions table
 function updateTransactionsTable(transactions) {
     const tbody = document.querySelector('#transactions-table tbody');
@@ -409,13 +430,9 @@ function updateTransactionsTable(transactions) {
     transactions.forEach(tx => {
         const row = document.createElement('tr');
         
-        // Determine if text contains Persian characters
-        const hasPersian = /[\u0600-\u06FF]/.test(tx.name);
-        const nameClass = hasPersian ? 'font-vazir text-end' : '';
-        
-        // Determine icon based on category (you can expand this)
+        // Determine icon based on category
         let iconClass = 'fa-shopping-cart';
-        switch(tx.category_name.toLowerCase()) {
+        switch(tx.category.toLowerCase()) {
             case 'food':
             case 'groceries':
             case 'غذا':
@@ -439,21 +456,27 @@ function updateTransactionsTable(transactions) {
             case 'سلامت':
                 iconClass = 'fa-medkit';
                 break;
+            case 'personal-shopping':
+                iconClass = 'fa-shopping-bag';
+                break;
         }
         
         let bgClass = tx.is_income ? 'bg-success' : 'bg-danger';
         
-        // Format amount based on currency
-        const amount = Math.abs(tx.price);
-        const formattedAmount = tx.is_usd 
-            ? `${tx.is_income ? '+' : '-'}$${amount.toFixed(2)}` 
-            : `${tx.is_income ? '+' : '-'}${amount.toLocaleString('fa-IR')} تومان`;
+        // Calculate amounts for both currencies
+        const amount = Math.abs(tx.price_in_dollar);
+        const tomanAmount = amount * tx.your_currency_rate;
         
-        // Check if category and source names contain Persian
-        const hasPersianCategory = /[\u0600-\u06FF]/.test(tx.category_name);
-        const hasPersianSource = /[\u0600-\u06FF]/.test(tx.source_name);
-        const categoryClass = hasPersianCategory ? 'font-vazir text-end' : '';
-        const sourceClass = hasPersianSource ? 'font-vazir text-end' : '';
+        // Format amounts for both currencies
+        const usdAmount = `${tx.is_income ? '+' : '-'}$${amount.toFixed(2)}`;
+        const tomanAmountStr = `${tx.is_income ? '+' : '-'}${tomanAmount.toLocaleString()} T`;
+        
+        // Always start with USD display
+        const formattedAmount = usdAmount;
+        
+        // Check if text contains Persian characters
+        const hasPersian = /[\u0600-\u06FF]/.test(tx.name);
+        const nameClass = hasPersian ? 'font-vazir text-end' : '';
         
         row.innerHTML = `
             <td>
@@ -461,18 +484,49 @@ function updateTransactionsTable(transactions) {
                     <div class="transaction-icon ${bgClass}">
                         <i class="fas ${iconClass}"></i>
                     </div>
-                    <div class="ms-3 flex-grow-1">
+                    <div class="ms-3">
                         <h6 class="mb-0 ${nameClass}">${tx.name}</h6>
-                        <small class="text-muted ${sourceClass}">${tx.source_name}</small>
+                        <small class="text-muted">${tx.source}</small>
                     </div>
                 </div>
             </td>
-            <td class="${categoryClass}">${tx.category_name}</td>
-            <td dir="ltr">${new Date(tx.date).toLocaleDateString('fa-IR')}</td>
-            <td class="${tx.is_income ? 'text-success' : 'text-danger'} ${tx.is_usd ? '' : 'font-vazir'}">${formattedAmount}</td>
+            <td>${tx.category}</td>
+            <td>${new Date(tx.date).toLocaleDateString()}</td>
+            <td class="amount-cell ${tx.is_income ? 'text-success' : 'text-danger'}" 
+                data-usd="${usdAmount}" 
+                data-toman="${tomanAmountStr}">
+                ${formattedAmount}
+            </td>
         `;
         
         tbody.appendChild(row);
+    });
+}
+
+// Add currency toggle function
+function toggleTransactionCurrency() {
+    console.log('Toggle function called. Current state:', displayInUSD);
+    
+    // Toggle the state
+    displayInUSD = !displayInUSD;
+    console.log('New state:', displayInUSD);
+    
+    // Update toggle button text
+    const toggleBtn = document.getElementById('toggleCurrencyBtn');
+    if (toggleBtn) {
+        toggleBtn.innerHTML = `<i class="fas fa-exchange-alt"></i> Show in ${displayInUSD ? 'Toman' : 'USD'}`;
+    }
+    
+    // Update all amount cells
+    const amountCells = document.querySelectorAll('.amount-cell');
+    console.log('Found amount cells:', amountCells.length);
+    
+    amountCells.forEach(cell => {
+        const usdAmount = cell.getAttribute('data-usd');
+        const tomanAmount = cell.getAttribute('data-toman');
+        console.log('Cell data:', { usd: usdAmount, toman: tomanAmount });
+        
+        cell.textContent = displayInUSD ? usdAmount : tomanAmount;
     });
 }
 
@@ -485,7 +539,7 @@ function updateBalanceSummary(totalUSD, totalToman) {
         usdBalanceEl.textContent = `$${totalUSD.toFixed(2)}`;
     }
     if (tomanBalanceEl) {
-        tomanBalanceEl.textContent = `${totalToman.toLocaleString()} ₺`;
+        tomanBalanceEl.textContent = `${totalToman.toLocaleString()} T`;
     }
 }
 
@@ -499,5 +553,33 @@ function updateTransactionSummary(totalIncome, totalExpense) {
     }
     if (expenseEl) {
         expenseEl.textContent = `$${totalExpense.toFixed(2)}`;
+    }
+}
+
+// Fetch and display exchange rate
+function fetchExchangeRate(live = false) {
+    fetch(`http://localhost:9000/api/exchange_rate?live=${live}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Exchange rate loaded:', data);
+            updateExchangeRateDisplay(data);
+        })
+        .catch(error => {
+            console.error('Error loading exchange rate:', error);
+            // Show error in the exchange rate display
+            const summaryExchangeRate = document.getElementById('summaryExchangeRate');
+            if (summaryExchangeRate) {
+                summaryExchangeRate.innerHTML = '<span class="text-danger">Failed to load</span>';
+            }
+        });
+}
+
+function updateExchangeRateDisplay(data) {
+    const formattedRate = new Intl.NumberFormat('en-US').format(Math.round(data.rate));
+    
+    // Update the summary card
+    const summaryExchangeRate = document.getElementById('summaryExchangeRate');
+    if (summaryExchangeRate) {
+        summaryExchangeRate.textContent = formattedRate;
     }
 } 

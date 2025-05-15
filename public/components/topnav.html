@@ -1,0 +1,32 @@
+<!-- Top Navigation Component -->
+<nav class="top-nav">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <button id="sidebar-toggle" class="btn">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="d-flex align-items-center">
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle" type="button" id="currencyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-dollar-sign"></i> USD
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="currencyDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-dollar-sign"></i> USD</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-money-bill-wave"></i> Toman</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown ms-3">
+                    <button class="btn dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle"></i>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav> 

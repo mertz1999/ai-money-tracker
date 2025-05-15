@@ -1,0 +1,46 @@
+<!-- Sources Table Component -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Sources</h5>
+            <div class="card-actions">
+                <div class="btn-group me-2">
+                    <button class="btn btn-sm btn-outline-secondary source-currency-toggle active" 
+                            data-mode="default" 
+                            onclick="toggleSourceDisplayMode('default')">
+                        Default
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary source-currency-toggle" 
+                            data-mode="usd" 
+                            onclick="toggleSourceDisplayMode('usd')">
+                        USD
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary source-currency-toggle" 
+                            data-mode="toman" 
+                            onclick="toggleSourceDisplayMode('toman')">
+                        Toman
+                    </button>
+                </div>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addSourceModal">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table sources-table" id="sources-table">
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Type</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Sources will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div> 

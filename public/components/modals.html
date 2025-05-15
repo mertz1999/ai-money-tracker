@@ -1,0 +1,108 @@
+<!-- Add Transaction Modal -->
+<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTransactionModalLabel">Add Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addTransactionForm">
+                    <div class="mb-3">
+                        <label for="transactionDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="transactionDescription" rows="3" placeholder="Describe your transaction (e.g., 'I spent $50 on groceries at Walmart')"></textarea>
+                        <small class="form-text text-muted">Our AI will parse this description automatically.</small>
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-secondary" id="parseTransactionBtn">Parse Description</button>
+                    </div>
+                    <div id="parsedTransactionDetails" style="display: none;">
+                        <div class="mb-3">
+                            <label for="transactionName" class="form-label">Name</label>
+                            <input type="text" class="form-control" id="transactionName">
+                        </div>
+                        <div class="mb-3">
+                            <label for="transactionDate" class="form-label">Date</label>
+                            <input type="date" class="form-control" id="transactionDate">
+                        </div>
+                        <div class="mb-3">
+                            <label for="transactionAmount" class="form-label">Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" id="transactionAmount" step="0.01">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="transactionCurrency" class="form-label">Currency</label>
+                            <select class="form-select" id="transactionCurrency">
+                                <option value="true">USD</option>
+                                <option value="false">Toman</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="transactionCategory" class="form-label">Category</label>
+                            <select class="form-select" id="transactionCategory">
+                                <!-- Categories will be loaded dynamically -->
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="transactionSource" class="form-label">Source</label>
+                            <select class="form-select" id="transactionSource">
+                                <!-- Sources will be loaded dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveTransactionBtn">Save Transaction</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Source Modal -->
+<div class="modal fade" id="addSourceModal" tabindex="-1" aria-labelledby="addSourceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSourceModalLabel">Add Source</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSourceForm">
+                    <div class="mb-3">
+                        <label for="sourceName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="sourceName" placeholder="e.g., Bank Account, Cash">
+                    </div>
+                    <div class="mb-3">
+                        <label for="sourceType" class="form-label">Type</label>
+                        <select class="form-select" id="sourceType">
+                            <option value="true">Bank</option>
+                            <option value="false">Cash</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sourceCurrency" class="form-label">Currency</label>
+                        <select class="form-select" id="sourceCurrency">
+                            <option value="true">USD</option>
+                            <option value="false">Toman</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sourceValue" class="form-label">Initial Balance</label>
+                        <div class="input-group">
+                            <span class="input-group-text" id="sourceValueCurrency">$</span>
+                            <input type="number" class="form-control" id="sourceValue" step="0.01" value="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveSourceBtn">Save Source</button>
+            </div>
+        </div>
+    </div>
+</div> 

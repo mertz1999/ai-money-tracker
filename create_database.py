@@ -20,9 +20,10 @@ def create_initial_database():
         "business-expense",
         "charity",
         "taxi",
-        
+        "income",
         # Undefined category
-        "other"
+        "other",
+        
     ]
     
     # Common sources for money tracking

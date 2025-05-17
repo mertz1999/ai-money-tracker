@@ -20,6 +20,7 @@ class TransactionInfo(BaseModel):
     category_name: str = Field(description="Category of the transaction")
     source_name: str = Field(description="Source of the transaction (e.g., Cash, Bank Account)")
     notes: Optional[str] = Field(description="Additional notes about the transaction", default=None)
+    is_deposit: bool = Field(description="Whether this is a deposit/income transaction (True) or an expense (False)")
 
 class TransactionParser:
     def __init__(self, available_categories: List[str] = None, available_sources: List[str] = None):
@@ -49,6 +50,14 @@ class TransactionParser:
             - If the text mentions dollars, USD, or $ symbols, set is_usd to true
             - If the text mentions toman, rial, تومان, or ریال, set is_usd to false
             - If no currency is specified, make your best guess based on context
+            
+            For deposit/income detection:
+            - Set is_deposit to true if the text indicates:
+              * Any form of income (salary, wage, earnings, revenue)
+              * Money being received or added (deposit, receive, add to account)
+              * Persian income terms (درآمد، حقوق، دستمزد، واریز)
+            - If is_deposit is true, automatically set category_name to 'income'
+            - For all other transactions, set is_deposit to false
             
             If any information is missing, make a reasonable guess based on the context.
             Today's date is {current_date}.

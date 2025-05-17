@@ -11,6 +11,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // Initialize transaction type dropdown styling
+    const transactionTypeSelect = document.getElementById('transactionType');
+    if (transactionTypeSelect) {
+        // Style the dropdown options when they change
+        transactionTypeSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const isIncome = selectedOption.value === 'income';
+            
+            // Update the select element's styling
+            this.className = `form-select ${isIncome ? 'text-success' : 'text-danger'}`;
+            
+            // If using a category select, update it based on transaction type
+            const categorySelect = document.getElementById('transactionCategory');
+            if (categorySelect && isIncome) {
+                // Find and select 'income' category for income transactions
+                for (let i = 0; i < categorySelect.options.length; i++) {
+                    if (categorySelect.options[i].value.toLowerCase() === 'income') {
+                        categorySelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        });
+        
+        // Trigger initial styling
+        transactionTypeSelect.dispatchEvent(new Event('change'));
+    }
+    
     // Currency toggle functionality
     const currencyItems = document.querySelectorAll('.dropdown-item');
     const currencyButton = document.getElementById('currencyDropdown');
@@ -167,13 +195,28 @@ function parseTransactionDescription() {
         // Try to select the category and source if they exist
         const categorySelect = document.getElementById('transactionCategory');
         const sourceSelect = document.getElementById('transactionSource');
+        const transactionTypeSelect = document.getElementById('transactionType');
         
-        // Find and select category
-        for (let i = 0; i < categorySelect.options.length; i++) {
-            if (categorySelect.options[i].value.toLowerCase() === data.category_name.toLowerCase()) {
-                categorySelect.selectedIndex = i;
-                break;
+        // If it's a deposit, force select 'income' category and transaction type
+        if (data.is_deposit) {
+            // Find and select 'income' category
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].value.toLowerCase() === 'income') {
+                    categorySelect.selectedIndex = i;
+                    break;
+                }
             }
+            // Select income in transaction type dropdown
+            transactionTypeSelect.value = 'income';
+        } else {
+            // For non-deposits, select the parsed category and expense type
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].value.toLowerCase() === data.category_name.toLowerCase()) {
+                    categorySelect.selectedIndex = i;
+                    break;
+                }
+            }
+            transactionTypeSelect.value = 'expense';
         }
         
         // Find and select source

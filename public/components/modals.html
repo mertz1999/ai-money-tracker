@@ -23,17 +23,11 @@
                     </div>
                     <div id="parsedTransactionDetails" style="display: none;">
                         <div class="mb-3">
-                            <label class="form-label">Transaction Type</label>
-                            <div class="btn-group w-100" role="group">
-                                <input type="radio" class="btn-check" name="transactionType" id="typeExpense" value="expense" checked>
-                                <label class="btn btn-outline-danger" for="typeExpense">
-                                    <i class="fas fa-minus-circle"></i> Expense
-                                </label>
-                                <input type="radio" class="btn-check" name="transactionType" id="typeIncome" value="income">
-                                <label class="btn btn-outline-success" for="typeIncome">
-                                    <i class="fas fa-plus-circle"></i> Income
-                                </label>
-                            </div>
+                            <label for="transactionType" class="form-label">Transaction Type</label>
+                            <select class="form-select" id="transactionType">
+                                <option value="expense" data-icon="fas fa-minus-circle" class="text-danger">Expense</option>
+                                <option value="income" data-icon="fas fa-plus-circle" class="text-success">Income</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="transactionName" class="form-label">Name</label>

@@ -208,6 +208,7 @@ function saveTransaction() {
     const is_usd = document.getElementById('transactionCurrency').value === 'true';
     const category_name = document.getElementById('transactionCategory').value;
     const source_name = document.getElementById('transactionSource').value;
+    const isIncome = document.getElementById('typeIncome').checked;
     
     // Validate form
     if (!name || !date || isNaN(price) || !category_name || !source_name) {
@@ -220,20 +221,26 @@ function saveTransaction() {
     saveBtn.textContent = 'Saving...';
     saveBtn.disabled = true;
     
+    // Prepare request data
+    const requestData = {
+        name,
+        date,
+        price: Math.abs(price), // Always send positive amount
+        is_usd,
+        category_name: isIncome ? 'income' : category_name, // Use 'income' category for income transactions
+        source_name
+    };
+
+    // Choose endpoint based on transaction type
+    const endpoint = isIncome ? '/api/add_income' : '/api/add_transaction';
+    
     // Send to API
-    fetch('/api/add_transaction', {
+    fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            name,
-            date,
-            price,
-            is_usd,
-            category_name,
-            source_name
-        })
+        body: JSON.stringify(requestData)
     })
     .then(response => {
         if (!response.ok) {
@@ -257,7 +264,7 @@ function saveTransaction() {
         loadSources();
         
         // Show success message
-        alert('Transaction added successfully!');
+        alert(isIncome ? 'Income added successfully!' : 'Transaction added successfully!');
     })
     .catch(error => {
         console.error('Error saving transaction:', error);
@@ -485,6 +492,9 @@ function updateTransactionsTable(page = 1) {
             case 'personal-shopping':
                 iconClass = 'fa-shopping-bag';
                 break;
+            case 'income':
+                iconClass = 'fa-money-bill-wave';
+                break;
         }
         
         let bgClass = tx.is_income ? 'bg-success' : 'bg-danger';
@@ -498,7 +508,7 @@ function updateTransactionsTable(page = 1) {
         const tomanAmountStr = `${tx.is_income ? '+' : '-'}${tomanAmount.toLocaleString()} T`;
         
         // Always start with USD display
-        const formattedAmount = usdAmount;
+        const formattedAmount = displayInUSD ? usdAmount : tomanAmountStr;
         
         // Check if text contains Persian characters
         const hasPersian = /[\u0600-\u06FF]/.test(tx.name);

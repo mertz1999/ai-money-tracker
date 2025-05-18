@@ -161,6 +161,7 @@ if __name__ == "__main__":
     # Sample transaction texts in English and Farsi
     sample_texts = [
         # English examples
+        "I have a deposite 1000$",
         "I spent 50 dollars on groceries at Walmart yesterday using my bank account",
         "Bought a movie ticket for 15 USD with cash today",
         "Paid 200 dollars for electricity bill from my USD account last week",
@@ -175,6 +176,7 @@ if __name__ == "__main__":
     
     # Process each sample text
     for text in sample_texts:
+        input("Press Enter to continue...")
         print(f"\nProcessing text: {text}")
         try:
             transaction = parser.parse_transaction(text)
@@ -191,6 +193,7 @@ if __name__ == "__main__":
             print(f"Currency: {'USD' if transaction.is_usd else 'Toman'}")
             print(f"Category: {transaction.category_name}")
             print(f"Source: {transaction.source_name}")
+            print(f"Is Deposit: {transaction.is_deposit}")
             if transaction.notes:
                 print(f"Notes: {transaction.notes}")
         except Exception as e:

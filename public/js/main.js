@@ -158,9 +158,9 @@ async function loadTransactions(month = currentMonth) {
             // Calculate totals for transaction stats
             const totals = transactions.reduce((acc, tx) => {
                 if (tx.is_deposit) {
-                    acc.income += Math.abs(tx.price_in_dollar);
+                    acc.income += Math.abs(tx.price);
                 } else {
-                    acc.expense += Math.abs(tx.price_in_dollar);
+                    acc.expense += Math.abs(tx.price);
                 }
                 return acc;
             }, { income: 0, expense: 0 });
@@ -342,9 +342,6 @@ function saveTransaction() {
         // Refresh data
         loadTransactions();
         loadSources();
-        
-        // Show success message
-        alert('Transaction added successfully!');
     })
     .catch(error => {
         console.error('Error saving transaction:', error);
@@ -541,14 +538,17 @@ function updateTransactionsTable(page = 1) {
     tbody.innerHTML = '';
     
     currentTransactions.forEach(tx => {
+        console.log('Transaction:', tx);
         const row = document.createElement('tr');
         
         // No icon logic, just display the category name
+        // Map category_id to name using allCategories
+        const categoryName = (allCategories.find(cat => cat.id === tx.category_id)?.name) || 'Other';
         
         let bgClass = tx.is_deposit ? 'bg-success' : 'bg-danger';
         
         // Calculate amounts for both currencies
-        const amount = Math.abs(tx.price_in_dollar);
+        const amount = Math.abs(tx.price);
         const tomanAmount = amount * tx.your_currency_rate;
         
         // Format amounts for both currencies
@@ -571,7 +571,7 @@ function updateTransactionsTable(page = 1) {
                     </div>
                 </div>
             </td>
-            <td>${tx.category || 'Other'}</td>
+            <td>${categoryName}</td>
             <td>${new Date(tx.date).toLocaleDateString()}</td>
             <td>
                 <span class="badge ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">

@@ -17,6 +17,7 @@ class Transaction(BaseModel):
     is_usd: bool
     category_id: int
     source_id: int
+    your_currency_rate: float
 
 class TransactionCreate(BaseModel):
     name: str
@@ -145,7 +146,8 @@ async def create_transaction(
         "category_id": transaction_data[5],
         "source_id": transaction_data[6],
         "category": categories.get(transaction_data[5], ""),
-        "source": sources.get(transaction_data[6], "")
+        "source": sources.get(transaction_data[6], ""),
+        "your_currency_rate": transaction_data[4]
     }
 
 @router.delete("/api/transactions/{transaction_id}")

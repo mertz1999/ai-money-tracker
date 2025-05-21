@@ -19,23 +19,20 @@ class Database:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS users (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT NOT NULL UNIQUE,
-                    email TEXT NOT NULL UNIQUE,
-                    password_hash TEXT NOT NULL,
-                    created_at TEXT NOT NULL
+                    username TEXT UNIQUE NOT NULL,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL
                 )
             ''')
-
-            # Create categories table
+            
+            # Create categories table (without user_id)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS categories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
-                    user_id INTEGER,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
+                    name TEXT UNIQUE NOT NULL
                 )
             ''')
-
+            
             # Create sources table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS sources (
@@ -43,13 +40,12 @@ class Database:
                     name TEXT NOT NULL,
                     bank BOOLEAN NOT NULL,
                     usd BOOLEAN NOT NULL,
-                    value REAL NOT NULL DEFAULT 0.0,
+                    value REAL NOT NULL,
                     user_id INTEGER NOT NULL,
-                    FOREIGN KEY (user_id) REFERENCES users (id),
-                    UNIQUE(name, user_id)
+                    FOREIGN KEY (user_id) REFERENCES users (id)
                 )
             ''')
-
+            
             # Create transactions table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS transactions (
@@ -69,11 +65,6 @@ class Database:
             ''')
             
             # Add user_id column if it doesn't exist
-            try:
-                cursor.execute('ALTER TABLE categories ADD COLUMN user_id INTEGER REFERENCES users(id)')
-            except sqlite3.OperationalError:
-                pass
-                
             try:
                 cursor.execute('ALTER TABLE sources ADD COLUMN user_id INTEGER NOT NULL REFERENCES users(id)')
             except sqlite3.OperationalError:
@@ -124,18 +115,18 @@ class Database:
             return cursor.fetchone()
 
     def add_category(self, name, user_id=None):
-        """Add a new category"""
-        try:
-            with self.get_connection() as conn:
-                cursor = conn.cursor()
+        """Add a new category (global, not user-specific)"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            try:
                 cursor.execute(
-                    "INSERT INTO categories (name, user_id) VALUES (?, ?)",
-                    (name, user_id)
+                    "INSERT INTO categories (name) VALUES (?)",
+                    (name,)
                 )
                 conn.commit()
                 return cursor.lastrowid
-        except sqlite3.IntegrityError:
-            return None
+            except sqlite3.IntegrityError:
+                return None
 
     def add_source(self, name, bank, usd, value=0.0, user_id=None):
         """Add a new source"""
@@ -281,14 +272,11 @@ class Database:
             
             return True
 
-    def get_all_categories(self, user_id=None):
-        """Get all categories for a user"""
+    def get_all_categories(self):
+        """Get all categories (global, not user-specific)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            if user_id is not None:
-                cursor.execute("SELECT * FROM categories WHERE user_id = ? OR user_id IS NULL", (user_id,))
-            else:
-                cursor.execute("SELECT * FROM categories WHERE user_id IS NULL")
+            cursor.execute("SELECT * FROM categories")
             return cursor.fetchall()
 
     def get_all_sources(self, user_id):
@@ -362,4 +350,11 @@ class Database:
                 (start_date, end_date)
             )
             result = cursor.fetchall()
-            return result 
+            return result
+    
+    def get_transaction_by_id(self, transaction_id):
+        """Get a transaction by its ID"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM transactions WHERE id = ?", (transaction_id,))
+            return cursor.fetchone() 

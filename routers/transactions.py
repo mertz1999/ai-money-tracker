@@ -17,8 +17,6 @@ class Transaction(BaseModel):
     is_usd: bool
     category_id: int
     source_id: int
-    notes: Optional[str] = None
-    created_at: str
 
 class TransactionCreate(BaseModel):
     name: str
@@ -27,7 +25,6 @@ class TransactionCreate(BaseModel):
     is_usd: bool
     category_id: int
     source_id: int
-    notes: Optional[str] = None
 
 class IncomeCreate(BaseModel):
     name: str
@@ -76,37 +73,57 @@ async def get_transactions(
 ):
     """Get all transactions for the current user"""
     transactions = db.get_all_transactions(current_user[0])  # current_user[0] is the user_id
+    # Fetch all categories and sources for mapping
+    categories = {cat[0]: cat[1] for cat in db.get_all_categories()}
+    sources = {src[0]: src[1] for src in db.get_all_sources(current_user[0])}
     return [
         {
             "id": transaction[0],
             "name": transaction[1],
             "date": transaction[2],
             "price": transaction[3],
-            "is_usd": bool(transaction[4]),
+            "your_currency_rate": transaction[4],
+            "is_usd": bool(sources.get(transaction[6], False)),  # fallback if source not found
             "category_id": transaction[5],
             "source_id": transaction[6],
-            "notes": transaction[7],
-            "created_at": transaction[8]
+            "category": categories.get(transaction[5], ""),
+            "source": sources.get(transaction[6], ""),
+            "is_deposit": bool(transaction[7]) if len(transaction) > 7 else False
         }
         for transaction in transactions
     ]
 
-@router.post("/api/transactions", response_model=Transaction)
+@router.post("/api/add_transaction", response_model=Transaction)
 async def create_transaction(
     transaction: TransactionCreate,
     current_user = Depends(get_current_user),
-    db: Database = Depends(get_db)
+    db: Database = Depends(get_db),
+    exchange=Depends(get_exchange_dependency)
 ):
     """Create a new transaction"""
+    # Get current exchange rate
+    usd_rate = exchange.get_usd_rate(live=False)
+    if usd_rate is None:
+        raise HTTPException(status_code=503, detail="Failed to fetch exchange rate")
+
+    # Convert price to USD if needed
+    if transaction.is_usd:
+        price_in_dollar = transaction.price
+        your_currency_rate = usd_rate
+    else:
+        price_in_dollar = transaction.price / usd_rate
+        your_currency_rate = usd_rate
+
     transaction_id = db.add_transaction(
         user_id=current_user[0],
         name=transaction.name,
         date=transaction.date,
-        price=transaction.price,
-        is_usd=transaction.is_usd,
+        price_in_dollar=price_in_dollar,
+        your_currency_rate=your_currency_rate,
         category_id=transaction.category_id,
         source_id=transaction.source_id,
-        notes=transaction.notes
+        is_deposit=False,
+        update_balance=True
     )
     if not transaction_id:
         raise HTTPException(
@@ -116,6 +133,9 @@ async def create_transaction(
     
     # Get the created transaction
     transaction_data = db.get_transaction_by_id(transaction_id)
+    # Fetch all categories and sources for mapping
+    categories = {cat[0]: cat[1] for cat in db.get_all_categories()}
+    sources = {src[0]: src[1] for src in db.get_all_sources(current_user[0])}
     return {
         "id": transaction_data[0],
         "name": transaction_data[1],
@@ -124,8 +144,8 @@ async def create_transaction(
         "is_usd": bool(transaction_data[4]),
         "category_id": transaction_data[5],
         "source_id": transaction_data[6],
-        "notes": transaction_data[7],
-        "created_at": transaction_data[8]
+        "category": categories.get(transaction_data[5], ""),
+        "source": sources.get(transaction_data[6], "")
     }
 
 @router.delete("/api/transactions/{transaction_id}")
@@ -221,6 +241,16 @@ async def parse_transaction(
         raise HTTPException(status_code=400, detail="No text provided")
     
     try:
+        # Get available categories and sources for the parser
+        db = Database()
+        categories = [cat[1] for cat in db.get_all_categories()]  # Get category names
+        sources = [src[1] for src in db.get_all_sources(current_user[0])]  # Get source names
+        
+        # Update parser with available categories and sources
+        parser.available_categories = categories
+        parser.available_sources = sources
+        
+        # Parse the transaction
         transaction = parser.parse_transaction(text)
         return transaction.dict()
     except Exception as e:
@@ -235,7 +265,7 @@ def get_exchange_rate(live: bool = False, exchange=Depends(get_exchange_dependen
             raise HTTPException(status_code=503, detail="Failed to fetch exchange rate")
         return {
             "rate": rate,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat() 
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 

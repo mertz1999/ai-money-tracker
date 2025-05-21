@@ -39,6 +39,23 @@ document.addEventListener('DOMContentLoaded', function() {
         transactionTypeSelect.dispatchEvent(new Event('change'));
     }
     
+    // Add event listener for transaction modal
+    const addTransactionModal = document.getElementById('addTransactionModal');
+    if (addTransactionModal) {
+        addTransactionModal.addEventListener('show.bs.modal', function () {
+            // Load categories and sources when modal is opened
+            loadCategories();
+            loadSources();
+            const saveTransactionBtn = document.getElementById('saveTransactionBtn');
+            if (saveTransactionBtn) {
+                // Remove previous listeners to avoid duplicates
+                const newBtn = saveTransactionBtn.cloneNode(true);
+                saveTransactionBtn.parentNode.replaceChild(newBtn, saveTransactionBtn);
+                newBtn.addEventListener('click', saveTransaction);
+            }
+        });
+    }
+    
     // Currency toggle functionality
     const currencyItems = document.querySelectorAll('.dropdown-item');
     const currencyButton = document.getElementById('currencyDropdown');
@@ -61,6 +78,10 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(() => fetchExchangeRate(), 30 * 60 * 1000);
 });
 
+// Add global state for categories and sources
+let allCategories = [];
+let allSources = [];
+
 // Load categories from API
 async function loadCategories() {
     if (!checkAuth()) return;
@@ -80,7 +101,7 @@ async function loadCategories() {
                     categorySelect.appendChild(option);
                 });
             }
-            updateCategoryStats(categories);
+            allCategories = categories;
         }
     } catch (error) {
         console.error('Error loading categories:', error);
@@ -107,7 +128,7 @@ async function loadSources() {
                 });
             }
             updateSourcesTable(sources);
-            updateTotalBalance(sources);
+            allSources = sources;
         }
     } catch (error) {
         console.error('Error loading sources:', error);
@@ -181,7 +202,7 @@ function parseTransactionDescription() {
     buttonText.style.opacity = '0';
     spinner.classList.remove('d-none');
     
-    fetch('/api/parse_transaction', {
+    fetchWithAuth('/api/parse_transaction', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -260,36 +281,41 @@ function saveTransaction() {
     const is_usd = document.getElementById('transactionCurrency').value === 'true';
     const category_name = document.getElementById('transactionCategory').value;
     const source_name = document.getElementById('transactionSource').value;
-    const transactionType = document.getElementById('transactionType').value;
-    const is_deposit = transactionType === 'income';
+    // const transactionType = document.getElementById('transactionType').value;
+    // const is_deposit = transactionType === 'income';
     
     // Validate form
     if (!name || !date || isNaN(price) || !category_name || !source_name) {
         alert('Please fill all fields correctly.');
         return;
     }
-    
+
+    // Find IDs for category and source
+    const cat = allCategories.find(c => c.name === category_name);
+    const src = allSources.find(s => s.name === source_name);
+    if (!cat || !src) {
+        alert('Invalid category or source.');
+        return;
+    }
+
+    // Always use /api/add_transaction and send IDs
+    const requestData = {
+        name,
+        date,
+        price: Math.abs(price),
+        is_usd,
+        category_id: cat.id,
+        source_id: src.id
+    };
+    const endpoint = '/api/add_transaction';
+
     // Show loading state
     const saveBtn = document.getElementById('saveTransactionBtn');
     saveBtn.textContent = 'Saving...';
     saveBtn.disabled = true;
-    
-    // Prepare request data
-    const requestData = {
-        name,
-        date,
-        price: Math.abs(price), // Always send positive amount
-        is_usd,
-        category_name: is_deposit ? 'income' : category_name, // Use 'income' category for income transactions
-        source_name,
-        is_deposit
-    };
 
-    // Choose endpoint based on transaction type
-    const endpoint = is_deposit ? '/api/add_income' : '/api/add_transaction';
-    
     // Send to API
-    fetch(endpoint, {
+    fetchWithAuth(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -318,7 +344,7 @@ function saveTransaction() {
         loadSources();
         
         // Show success message
-        alert(is_deposit ? 'Income added successfully!' : 'Transaction added successfully!');
+        alert('Transaction added successfully!');
     })
     .catch(error => {
         console.error('Error saving transaction:', error);
@@ -351,7 +377,7 @@ function saveSource() {
     saveBtn.disabled = true;
     
     // Send to API
-    fetch('/api/add_source', {
+    fetchWithAuth('/api/add_source', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -517,39 +543,7 @@ function updateTransactionsTable(page = 1) {
     currentTransactions.forEach(tx => {
         const row = document.createElement('tr');
         
-        // Determine icon based on category
-        let iconClass = 'fa-shopping-cart';
-        switch(tx.category.toLowerCase()) {
-            case 'food':
-            case 'groceries':
-            case 'غذا':
-            case 'خوراک':
-                iconClass = 'fa-utensils';
-                break;
-            case 'transportation':
-            case 'حمل و نقل':
-                iconClass = 'fa-car';
-                break;
-            case 'entertainment':
-            case 'تفریح':
-                iconClass = 'fa-film';
-                break;
-            case 'utilities':
-            case 'قبوض':
-                iconClass = 'fa-bolt';
-                break;
-            case 'healthcare':
-            case 'پزشکی':
-            case 'سلامت':
-                iconClass = 'fa-medkit';
-                break;
-            case 'personal-shopping':
-                iconClass = 'fa-shopping-bag';
-                break;
-            case 'income':
-                iconClass = 'fa-money-bill-wave';
-                break;
-        }
+        // No icon logic, just display the category name
         
         let bgClass = tx.is_deposit ? 'bg-success' : 'bg-danger';
         
@@ -571,16 +565,13 @@ function updateTransactionsTable(page = 1) {
         row.innerHTML = `
             <td>
                 <div class="d-flex align-items-center">
-                    <div class="transaction-icon ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
-                        <i class="fas ${iconClass}"></i>
-                    </div>
                     <div class="ms-3">
                         <h6 class="mb-0 ${nameClass}">${tx.name}</h6>
                         <small class="text-muted">${tx.source}</small>
                     </div>
                 </div>
             </td>
-            <td>${tx.category}</td>
+            <td>${tx.category || 'Other'}</td>
             <td>${new Date(tx.date).toLocaleDateString()}</td>
             <td>
                 <span class="badge ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
@@ -693,7 +684,7 @@ function fetchExchangeRate(live = false) {
         spinner.classList.remove('d-none');
     }
     
-    fetch(`/api/exchange_rate?live=${live}`)
+    fetchWithAuth(`/api/exchange_rate?live=${live}`)
         .then(response => response.json())
         .then(data => {
             console.log('Exchange rate loaded:', data);

@@ -53,7 +53,7 @@ def create_initial_database():
     print("\nAdding categories...")
     for category in categories:
         try:
-            db.add_category(category, user_id=admin_id)
+            db.add_category(category)
             print(f"Added category: {category}")
         except Exception as e:
             print(f"Error adding category {category}: {e}")

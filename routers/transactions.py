@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Body, Query
+from fastapi import APIRouter, Depends, HTTPException, Body, Query, status
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import date, datetime
+from modules.database import Database
+from routers.users import get_current_user
 
 # Create router
 router = APIRouter()
@@ -11,27 +13,30 @@ class Transaction(BaseModel):
     id: int
     name: str
     date: str
-    price_in_dollar: float
-    your_currency_rate: float
-    category: str
-    source: str
-    is_income: bool
+    price: float
+    is_usd: bool
+    category_id: int
+    source_id: int
+    notes: Optional[str] = None
+    created_at: str
 
 class TransactionCreate(BaseModel):
     name: str
     date: str
     price: float
     is_usd: bool
-    category_name: str
-    source_name: str
+    category_id: int
+    source_id: int
+    notes: Optional[str] = None
 
 class IncomeCreate(BaseModel):
     name: str
     date: str
-    amount: float
+    price: float
     is_usd: bool
     category_name: str
     source_name: str
+    is_deposit: bool = True
 
 class TransactionResponse(BaseModel):
     id: int
@@ -45,15 +50,15 @@ class ParsedTransaction(BaseModel):
     category_name: str
     source_name: str
     notes: Optional[str] = None
+    is_deposit: bool
 
 class ExchangeRateResponse(BaseModel):
     rate: float
     timestamp: str
 
 # Create dependency functions that will be injected at runtime
-def get_db_dependency():
-    from main import get_db
-    return get_db()
+def get_db():
+    return Database()
 
 def get_exchange_dependency():
     from main import get_exchange
@@ -66,80 +71,97 @@ def get_parser_dependency():
 # API routes
 @router.get("/api/transactions", response_model=List[Transaction])
 async def get_transactions(
-    month: Optional[int] = Query(None, ge=1, le=12, description="Month number (1-12)"),
-    db=Depends(get_db_dependency)
+    current_user = Depends(get_current_user),
+    db: Database = Depends(get_db)
 ):
-    """Get all transactions, optionally filtered by month"""
-    transactions = db.get_all_transactions(month=month)
-    result = []
-    categories = {cat[0]: cat[1] for cat in db.get_all_categories()}
-    sources = {src[0]: src[1] for src in db.get_all_sources()}
-    
-    for tx in transactions:
-        result.append({
-            'id': tx[0],
-            'name': tx[1],
-            'date': tx[2],
-            'price_in_dollar': tx[3],
-            'your_currency_rate': tx[4],
-            'category': categories.get(tx[5], 'Unknown'),
-            'source': sources.get(tx[6], 'Unknown'),
-            'is_income': tx[3] < 0  # Negative price indicates income
-        })
-    
-    return result
+    """Get all transactions for the current user"""
+    transactions = db.get_all_transactions(current_user[0])  # current_user[0] is the user_id
+    return [
+        {
+            "id": transaction[0],
+            "name": transaction[1],
+            "date": transaction[2],
+            "price": transaction[3],
+            "is_usd": bool(transaction[4]),
+            "category_id": transaction[5],
+            "source_id": transaction[6],
+            "notes": transaction[7],
+            "created_at": transaction[8]
+        }
+        for transaction in transactions
+    ]
 
-@router.post("/api/add_transaction", response_model=TransactionResponse)
-def add_transaction(transaction: TransactionCreate, db=Depends(get_db_dependency), exchange=Depends(get_exchange_dependency)):
-    """Add a new transaction"""
-    # Get category ID
-    categories = {cat[1].lower(): cat[0] for cat in db.get_all_categories()}
-    category_name = transaction.category_name.lower()
-    
-    if category_name not in categories:
-        # Use 'other' category if not found
-        category_id = categories.get('other')
-    else:
-        category_id = categories[category_name]
-    
-    # Get source ID
-    sources = {src[1].lower(): src[0] for src in db.get_all_sources()}
-    source_name = transaction.source_name.lower()
-    
-    if source_name not in sources:
-        raise HTTPException(status_code=400, detail=f"Source not found: {source_name}")
-    
-    source_id = sources[source_name]
-    
-    # Get current exchange rate
-    usd_rate = exchange.get_usd_rate(live=False)
-    if usd_rate is None:
-        raise HTTPException(status_code=503, detail="Failed to fetch exchange rate")
-    
-    # Convert price to USD if needed
-    price_in_dollar = transaction.price if transaction.is_usd else transaction.price / usd_rate
-    
-    # Add transaction to database
-    try:
-        tx_id = db.add_transaction(
-            name=transaction.name,
-            date=transaction.date,
-            price_in_dollar=price_in_dollar,
-            your_currency_rate=usd_rate,
-            category_id=category_id,
-            source_id=source_id,
-            update_balance=True  # Update source balance
+@router.post("/api/transactions", response_model=Transaction)
+async def create_transaction(
+    transaction: TransactionCreate,
+    current_user = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    """Create a new transaction"""
+    transaction_id = db.add_transaction(
+        user_id=current_user[0],
+        name=transaction.name,
+        date=transaction.date,
+        price=transaction.price,
+        is_usd=transaction.is_usd,
+        category_id=transaction.category_id,
+        source_id=transaction.source_id,
+        notes=transaction.notes
+    )
+    if not transaction_id:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create transaction"
         )
-        
-        return {"id": tx_id, "message": "Transaction added successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    # Get the created transaction
+    transaction_data = db.get_transaction_by_id(transaction_id)
+    return {
+        "id": transaction_data[0],
+        "name": transaction_data[1],
+        "date": transaction_data[2],
+        "price": transaction_data[3],
+        "is_usd": bool(transaction_data[4]),
+        "category_id": transaction_data[5],
+        "source_id": transaction_data[6],
+        "notes": transaction_data[7],
+        "created_at": transaction_data[8]
+    }
+
+@router.delete("/api/transactions/{transaction_id}")
+async def delete_transaction(
+    transaction_id: int,
+    current_user = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    """Delete a transaction"""
+    # Check if transaction exists and belongs to user
+    transaction = db.get_transaction_by_id(transaction_id)
+    if not transaction:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Transaction not found"
+        )
+    
+    # Delete the transaction
+    if not db.delete_transaction(transaction_id):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete transaction"
+        )
+    
+    return {"message": "Transaction deleted successfully"}
 
 @router.post("/api/add_income", response_model=TransactionResponse)
-def add_income(income: IncomeCreate, db=Depends(get_db_dependency), exchange=Depends(get_exchange_dependency)):
+async def add_income(
+    income: IncomeCreate,
+    current_user = Depends(get_current_user),
+    db: Database = Depends(get_db),
+    exchange=Depends(get_exchange_dependency)
+):
     """Add income to a source"""
     # Get category ID
-    categories = {cat[1].lower(): cat[0] for cat in db.get_all_categories()}
+    categories = {cat[1].lower(): cat[0] for cat in db.get_all_categories(current_user[0])}
     category_name = income.category_name.lower()
     
     if category_name not in categories:
@@ -149,7 +171,7 @@ def add_income(income: IncomeCreate, db=Depends(get_db_dependency), exchange=Dep
         category_id = categories[category_name]
     
     # Get source ID
-    sources = {src[1].lower(): src[0] for src in db.get_all_sources()}
+    sources = {src[1].lower(): src[0] for src in db.get_all_sources(current_user[0])}
     source_name = income.source_name.lower()
     
     if source_name not in sources:
@@ -162,16 +184,21 @@ def add_income(income: IncomeCreate, db=Depends(get_db_dependency), exchange=Dep
     if usd_rate is None:
         raise HTTPException(status_code=503, detail="Failed to fetch exchange rate")
     
-    # Add income to database
+    # Convert price to USD if needed
+    price_in_dollar = income.price if income.is_usd else income.price / usd_rate
+    
+    # Add transaction to database
     try:
-        tx_id = db.add_income(
+        tx_id = db.add_transaction(
+            user_id=current_user[0],
             name=income.name,
             date=income.date,
-            amount=income.amount,
-            is_usd=income.is_usd,
+            price_in_dollar=-price_in_dollar,  # Negative for income
             your_currency_rate=usd_rate,
             category_id=category_id,
-            source_id=source_id
+            source_id=source_id,
+            is_deposit=True,  # Always True for income
+            update_balance=True
         )
         
         return {"id": tx_id, "message": "Income added successfully"}
@@ -182,7 +209,11 @@ class TransactionText(BaseModel):
     text: str
 
 @router.post("/api/parse_transaction", response_model=ParsedTransaction)
-async def parse_transaction(transaction_text: TransactionText, parser=Depends(get_parser_dependency)):
+async def parse_transaction(
+    transaction_text: TransactionText,
+    current_user = Depends(get_current_user),
+    parser=Depends(get_parser_dependency)
+):
     """Parse transaction description using AI"""
     text = transaction_text.text
     

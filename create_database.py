@@ -1,4 +1,5 @@
 from modules.database import Database
+from modules.auth import get_password_hash
 import os
 
 def create_initial_database():
@@ -6,6 +7,18 @@ def create_initial_database():
     
     # Initialize database
     db = Database()
+    
+    # Create default admin user
+    print("Creating default admin user...")
+    admin_id = db.add_user(
+        username="admin",
+        email="admin@example.com",
+        password_hash=get_password_hash("admin123")
+    )
+    if admin_id:
+        print("Admin user created successfully!")
+    else:
+        print("Admin user already exists.")
     
     # Common categories for money tracking
     categories = [
@@ -23,25 +36,24 @@ def create_initial_database():
         "income",
         # Undefined category
         "other",
-        
     ]
     
     # Common sources for money tracking
     sources = [
         # Cash and bank accounts
-        {"name": "bank-account", "bank": True, "usd": False, "value": 200000000},
-        {"name": "inhome-save", "bank": False, "usd": True, "value": 500.0},
+        {"name": "bank-account", "bank": True, "usd": False, "value": 200000000, "user_id": admin_id},
+        {"name": "inhome-save", "bank": False, "usd": True, "value": 500.0, "user_id": admin_id},
         
         # Credit and debit cards
-        {"name": "zirrat", "bank": True, "usd": True, "value": 1300},
-        {"name": "digital-wallet", "bank": False, "usd": True, "value": 1400},
+        {"name": "zirrat", "bank": True, "usd": True, "value": 1300, "user_id": admin_id},
+        {"name": "digital-wallet", "bank": False, "usd": True, "value": 1400, "user_id": admin_id},
     ]
     
     # Add categories to database
-    print("Adding categories...")
+    print("\nAdding categories...")
     for category in categories:
         try:
-            db.add_category(category)
+            db.add_category(category, user_id=admin_id)
             print(f"Added category: {category}")
         except Exception as e:
             print(f"Error adding category {category}: {e}")
@@ -54,7 +66,8 @@ def create_initial_database():
                 name=source["name"],
                 bank=source["bank"],
                 usd=source["usd"],
-                value=source["value"]
+                value=source["value"],
+                user_id=source["user_id"]
             )
             print(f"Added source: {source['name']}")
         except Exception as e:

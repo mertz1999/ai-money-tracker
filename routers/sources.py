@@ -1,6 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
-from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List
 from pydantic import BaseModel
+from modules.database import Database
+from routers.users import get_current_user
 
 # Create router
 router = APIRouter()
@@ -23,32 +25,39 @@ class SourceResponse(BaseModel):
     id: int
     message: str
 
-# Create a dependency function that will be injected at runtime
-def get_db_dependency():
-    from main import get_db
-    return get_db()
+# Dependency
+def get_db():
+    return Database()
 
 # API routes
 @router.get("/api/sources", response_model=List[Source])
-async def get_sources(db=Depends(get_db_dependency)):
-    """Get all sources"""
-    sources = db.get_all_sources()
+async def get_sources(
+    current_user = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    """Get all sources for the current user"""
+    sources = db.get_all_sources(current_user[0])  # current_user[0] is the user_id
     return [
         {
-            "id": src[0], 
-            "name": src[1], 
-            "bank": bool(src[2]), 
-            "usd": bool(src[3]), 
+            "id": src[0],
+            "name": src[1],
+            "bank": bool(src[2]),
+            "usd": bool(src[3]),
             "value": src[4]
-        } 
+        }
         for src in sources
     ]
 
 @router.post("/api/add_source", response_model=SourceResponse)
-async def add_source(source: SourceCreate, db=Depends(get_db_dependency)):
+async def add_source(
+    source: SourceCreate,
+    current_user = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
     """Add a new source"""
     try:
         source_id = db.add_source(
+            user_id=current_user[0],  # Add user_id here
             name=source.name,
             bank=source.bank,
             usd=source.usd,

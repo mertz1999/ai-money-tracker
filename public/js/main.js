@@ -62,10 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Load categories from API
-function loadCategories() {
-    fetch('/api/categories')
-        .then(response => response.json())
-        .then(categories => {
+async function loadCategories() {
+    if (!checkAuth()) return;
+    
+    try {
+        const response = await fetchWithAuth('/api/categories');
+        if (response.ok) {
+            const categories = await response.json();
             console.log('Categories loaded:', categories);
             const categorySelect = document.getElementById('transactionCategory');
             if (categorySelect) {
@@ -78,17 +81,20 @@ function loadCategories() {
                 });
             }
             updateCategoryStats(categories);
-        })
-        .catch(error => {
-            console.error('Error loading categories:', error);
-        });
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+    }
 }
 
 // Load sources from API
-function loadSources() {
-    fetch('/api/sources')
-        .then(response => response.json())
-        .then(sources => {
+async function loadSources() {
+    if (!checkAuth()) return;
+    
+    try {
+        const response = await fetchWithAuth('/api/sources');
+        if (response.ok) {
+            const sources = await response.json();
             console.log('Sources loaded:', sources);
             const sourceSelect = document.getElementById('transactionSource');
             if (sourceSelect) {
@@ -102,10 +108,10 @@ function loadSources() {
             }
             updateSourcesTable(sources);
             updateTotalBalance(sources);
-        })
-        .catch(error => {
-            console.error('Error loading sources:', error);
-        });
+        }
+    } catch (error) {
+        console.error('Error loading sources:', error);
+    }
 }
 
 // Add global state for currency displays
@@ -118,16 +124,19 @@ let currentExchangeRate = null;
 let sourceDisplayMode = 'default'; // 'default', 'usd', or 'toman'
 
 // Load transactions from API
-function loadTransactions(month = currentMonth) {
-    fetch(`/api/transactions?month=${month}`)
-        .then(response => response.json())
-        .then(transactions => {
+async function loadTransactions(month = currentMonth) {
+    if (!checkAuth()) return;
+    
+    try {
+        const response = await fetchWithAuth(`/api/transactions?month=${month}`);
+        if (response.ok) {
+            const transactions = await response.json();
             // Store all transactions
             allTransactions = transactions;
             
             // Calculate totals for transaction stats
             const totals = transactions.reduce((acc, tx) => {
-                if (tx.is_income) {
+                if (tx.is_deposit) {
                     acc.income += Math.abs(tx.price_in_dollar);
                 } else {
                     acc.expense += Math.abs(tx.price_in_dollar);
@@ -138,20 +147,20 @@ function loadTransactions(month = currentMonth) {
             // Update summary and table
             updateTransactionSummary(totals.income, totals.expense);
             updateTransactionsTable(1); // Reset to first page when loading new data
-        })
-        .catch(error => {
-            console.error('Error loading transactions:', error);
-            const transactionsTable = document.querySelector('#transactions-table tbody');
-            if (transactionsTable) {
-                transactionsTable.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center text-danger">
-                            Failed to load transactions. Please try again later.
-                        </td>
-                    </tr>
-                `;
-            }
-        });
+        }
+    } catch (error) {
+        console.error('Error loading transactions:', error);
+        const transactionsTable = document.querySelector('#transactions-table tbody');
+        if (transactionsTable) {
+            transactionsTable.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-danger">
+                        Failed to load transactions. Please try again later.
+                    </td>
+                </tr>
+            `;
+        }
+    }
 }
 
 // Parse transaction description using AI
@@ -251,7 +260,8 @@ function saveTransaction() {
     const is_usd = document.getElementById('transactionCurrency').value === 'true';
     const category_name = document.getElementById('transactionCategory').value;
     const source_name = document.getElementById('transactionSource').value;
-    const isIncome = document.getElementById('typeIncome').checked;
+    const transactionType = document.getElementById('transactionType').value;
+    const is_deposit = transactionType === 'income';
     
     // Validate form
     if (!name || !date || isNaN(price) || !category_name || !source_name) {
@@ -270,12 +280,13 @@ function saveTransaction() {
         date,
         price: Math.abs(price), // Always send positive amount
         is_usd,
-        category_name: isIncome ? 'income' : category_name, // Use 'income' category for income transactions
-        source_name
+        category_name: is_deposit ? 'income' : category_name, // Use 'income' category for income transactions
+        source_name,
+        is_deposit
     };
 
     // Choose endpoint based on transaction type
-    const endpoint = isIncome ? '/api/add_income' : '/api/add_transaction';
+    const endpoint = is_deposit ? '/api/add_income' : '/api/add_transaction';
     
     // Send to API
     fetch(endpoint, {
@@ -307,7 +318,7 @@ function saveTransaction() {
         loadSources();
         
         // Show success message
-        alert(isIncome ? 'Income added successfully!' : 'Transaction added successfully!');
+        alert(is_deposit ? 'Income added successfully!' : 'Transaction added successfully!');
     })
     .catch(error => {
         console.error('Error saving transaction:', error);
@@ -540,15 +551,15 @@ function updateTransactionsTable(page = 1) {
                 break;
         }
         
-        let bgClass = tx.is_income ? 'bg-success' : 'bg-danger';
+        let bgClass = tx.is_deposit ? 'bg-success' : 'bg-danger';
         
         // Calculate amounts for both currencies
         const amount = Math.abs(tx.price_in_dollar);
         const tomanAmount = amount * tx.your_currency_rate;
         
         // Format amounts for both currencies
-        const usdAmount = `${tx.is_income ? '+' : '-'}$${amount.toFixed(2)}`;
-        const tomanAmountStr = `${tx.is_income ? '+' : '-'}${tomanAmount.toLocaleString()} T`;
+        const usdAmount = `${tx.is_deposit ? '+' : '-'}$${amount.toFixed(2)}`;
+        const tomanAmountStr = `${tx.is_deposit ? '+' : '-'}${tomanAmount.toLocaleString()} T`;
         
         // Always start with USD display
         const formattedAmount = displayInUSD ? usdAmount : tomanAmountStr;
@@ -560,7 +571,7 @@ function updateTransactionsTable(page = 1) {
         row.innerHTML = `
             <td>
                 <div class="d-flex align-items-center">
-                    <div class="transaction-icon ${bgClass}">
+                    <div class="transaction-icon ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
                         <i class="fas ${iconClass}"></i>
                     </div>
                     <div class="ms-3">
@@ -571,7 +582,12 @@ function updateTransactionsTable(page = 1) {
             </td>
             <td>${tx.category}</td>
             <td>${new Date(tx.date).toLocaleDateString()}</td>
-            <td class="amount-cell ${tx.is_income ? 'text-success' : 'text-danger'}" 
+            <td>
+                <span class="badge ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
+                    ${tx.is_deposit ? 'Deposit' : 'Expense'}
+                </span>
+            </td>
+            <td class="amount-cell ${tx.is_deposit ? 'text-success' : 'text-danger'}" 
                 data-usd="${usdAmount}" 
                 data-toman="${tomanAmountStr}">
                 ${formattedAmount}
@@ -712,4 +728,77 @@ function updateExchangeRateDisplay(data) {
     if (summaryExchangeRate) {
         summaryExchangeRate.textContent = formattedRate;
     }
-} 
+}
+
+// Check if user is logged in
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login.html';
+        return false;
+    }
+    return true;
+}
+
+// Add auth header to fetch requests
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    const headers = {
+        'Authorization': `Bearer ${token}`,
+        ...options.headers,
+    };
+
+    const response = await fetch(url, { ...options, headers });
+    
+    if (response.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+        return;
+    }
+
+    return response;
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = '/login.html';
+}
+
+// Add logout button to the page
+document.addEventListener('DOMContentLoaded', () => {
+    const header = document.querySelector('header');
+    if (header) {
+        const logoutButton = document.createElement('button');
+        logoutButton.textContent = 'Logout';
+        logoutButton.className = 'bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600';
+        logoutButton.onclick = logout;
+        header.appendChild(logoutButton);
+    }
+});
+
+// Update all fetch calls to use fetchWithAuth
+// ... existing code ...
+
+// Example of updating a fetch call:
+async function getSources() {
+    if (!checkAuth()) return;
+    
+    try {
+        const response = await fetchWithAuth('/api/sources');
+        if (response.ok) {
+            const sources = await response.json();
+            // Handle sources data
+        }
+    } catch (error) {
+        console.error('Error fetching sources:', error);
+    }
+}
+
+// ... rest of your existing code ... 

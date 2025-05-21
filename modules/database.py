@@ -15,11 +15,24 @@ class Database:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
+            # Create users table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    email TEXT NOT NULL UNIQUE,
+                    password_hash TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+            ''')
+
             # Create categories table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS categories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE
+                    name TEXT NOT NULL UNIQUE,
+                    user_id INTEGER,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
                 )
             ''')
 
@@ -27,10 +40,13 @@ class Database:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS sources (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
+                    name TEXT NOT NULL,
                     bank BOOLEAN NOT NULL,
                     usd BOOLEAN NOT NULL,
-                    value REAL NOT NULL DEFAULT 0.0
+                    value REAL NOT NULL DEFAULT 0.0,
+                    user_id INTEGER NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    UNIQUE(name, user_id)
                 )
             ''')
 
@@ -44,52 +60,111 @@ class Database:
                     your_currency_rate REAL NOT NULL,
                     category_id INTEGER,
                     source_id INTEGER,
+                    is_deposit BOOLEAN NOT NULL DEFAULT FALSE,
+                    user_id INTEGER NOT NULL,
                     FOREIGN KEY (category_id) REFERENCES categories (id),
-                    FOREIGN KEY (source_id) REFERENCES sources (id)
+                    FOREIGN KEY (source_id) REFERENCES sources (id),
+                    FOREIGN KEY (user_id) REFERENCES users (id)
                 )
             ''')
+            
+            # Add user_id column if it doesn't exist
+            try:
+                cursor.execute('ALTER TABLE categories ADD COLUMN user_id INTEGER REFERENCES users(id)')
+            except sqlite3.OperationalError:
+                pass
+                
+            try:
+                cursor.execute('ALTER TABLE sources ADD COLUMN user_id INTEGER NOT NULL REFERENCES users(id)')
+            except sqlite3.OperationalError:
+                pass
+                
+            try:
+                cursor.execute('ALTER TABLE transactions ADD COLUMN user_id INTEGER NOT NULL REFERENCES users(id)')
+            except sqlite3.OperationalError:
+                pass
+                
             conn.commit()
 
-    def add_category(self, name):
+    def add_user(self, username, email, password_hash):
+        """Add a new user"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO users (username, email, password_hash, created_at)
+                       VALUES (?, ?, ?, ?)""",
+                    (username, email, password_hash, datetime.now().isoformat())
+                )
+                user_id = cursor.lastrowid
+                conn.commit()
+                return user_id
+        except sqlite3.IntegrityError:
+            return None
+
+    def get_user_by_username(self, username):
+        """Get user by username"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+            return cursor.fetchone()
+
+    def get_user_by_email(self, email):
+        """Get user by email"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+            return cursor.fetchone()
+
+    def get_user_by_id(self, user_id):
+        """Get user by ID"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+            return cursor.fetchone()
+
+    def add_category(self, name, user_id=None):
         """Add a new category"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("INSERT INTO categories (name) VALUES (?)", (name,))
+                cursor.execute(
+                    "INSERT INTO categories (name, user_id) VALUES (?, ?)",
+                    (name, user_id)
+                )
                 conn.commit()
                 return cursor.lastrowid
         except sqlite3.IntegrityError:
             return None
 
-    def add_source(self, name, bank, usd, value=0.0):
+    def add_source(self, name, bank, usd, value=0.0, user_id=None):
         """Add a new source"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "INSERT INTO sources (name, bank, usd, value) VALUES (?, ?, ?, ?)",
-                    (name, bank, usd, value)
+                    "INSERT INTO sources (name, bank, usd, value, user_id) VALUES (?, ?, ?, ?, ?)",
+                    (name, bank, usd, value, user_id)
                 )
                 conn.commit()
                 return cursor.lastrowid
         except sqlite3.IntegrityError:
             return None
 
-    def add_transaction(self, name, date, price_in_dollar, your_currency_rate, category_id, source_id, update_balance=True):
+    def add_transaction(self, name, date, price_in_dollar, your_currency_rate, category_id, source_id, user_id, is_deposit=False, update_balance=True):
         """Add a new transaction and optionally update source balance"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     """INSERT INTO transactions 
-                       (name, date, price_in_dollar, your_currency_rate, category_id, source_id)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
-                    (name, date, price_in_dollar, your_currency_rate, category_id, source_id)
+                       (name, date, price_in_dollar, your_currency_rate, category_id, source_id, is_deposit, user_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (name, date, price_in_dollar, your_currency_rate, category_id, source_id, is_deposit, user_id)
                 )
                 transaction_id = cursor.lastrowid
                 conn.commit()
                 
-                # Update source balance if requested
                 if update_balance:
                     self.update_source_balance(source_id, price_in_dollar, your_currency_rate)
                 
@@ -155,9 +230,9 @@ class Database:
                 # Add as a negative transaction (income)
                 cursor.execute(
                     """INSERT INTO transactions 
-                       (name, date, price_in_dollar, your_currency_rate, category_id, source_id)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
-                    (name, date, -amount_in_dollar, your_currency_rate, category_id, source_id)
+                       (name, date, price_in_dollar, your_currency_rate, category_id, source_id, is_deposit)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (name, date, -amount_in_dollar, your_currency_rate, category_id, source_id, True)
                 )
                 transaction_id = cursor.lastrowid
                 conn.commit()
@@ -206,53 +281,45 @@ class Database:
             
             return True
 
-    def get_all_categories(self):
-        """Get all categories"""
+    def get_all_categories(self, user_id=None):
+        """Get all categories for a user"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM categories")
-            result = cursor.fetchall()
-            return result
+            if user_id is not None:
+                cursor.execute("SELECT * FROM categories WHERE user_id = ? OR user_id IS NULL", (user_id,))
+            else:
+                cursor.execute("SELECT * FROM categories WHERE user_id IS NULL")
+            return cursor.fetchall()
 
-    def get_all_sources(self):
-        """Get all sources"""
+    def get_all_sources(self, user_id):
+        """Get all sources for a user"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM sources")
-            result = cursor.fetchall()
-            return result
+            cursor.execute("SELECT * FROM sources WHERE user_id = ?", (user_id,))
+            return cursor.fetchall()
 
-    def get_all_transactions(self, month=None):
-        """Get all transactions, optionally filtered by month
-        
-        Args:
-            month: Optional month number (1-12). If provided, returns only transactions for that month
-                  in the current year.
-        """
+    def get_all_transactions(self, user_id, month=None):
+        """Get all transactions for a user, optionally filtered by month"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
             if month is not None:
-                # Get transactions for the specified month in the current year
                 year = datetime.now().year
                 start_date = f"{year}-{month:02d}-01"
-                
-                # Handle the end date for different months
-                if month == 12:
-                    end_date = f"{year + 1}-01-01"
-                else:
-                    end_date = f"{year}-{month + 1:02d}-01"
+                end_date = f"{year}-{month + 1:02d}-01" if month < 12 else f"{year + 1}-01-01"
                 
                 cursor.execute("""
                     SELECT * FROM transactions 
-                    WHERE date >= ? AND date < ?
+                    WHERE user_id = ? AND date >= ? AND date < ?
                     ORDER BY date DESC
-                """, (start_date, end_date))
+                """, (user_id, start_date, end_date))
             else:
-                cursor.execute("SELECT * FROM transactions ORDER BY date DESC")
+                cursor.execute(
+                    "SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC",
+                    (user_id,)
+                )
             
-            result = cursor.fetchall()
-            return result
+            return cursor.fetchall()
     
     def get_source_by_id(self, source_id):
         """Get source by ID"""

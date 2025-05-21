@@ -121,6 +121,15 @@
                             loadCategories();
                             loadSources();
                             loadTransactions(currentMonth);
+
+                            // Attach logout event
+                            const logoutBtn = document.getElementById('logoutBtn');
+                            if (logoutBtn) {
+                                logoutBtn.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    logout();
+                                });
+                            }
                         }
                     })
                     .catch(error => {

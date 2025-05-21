@@ -76,6 +76,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Refresh exchange rate every 30 minutes
     setInterval(() => fetchExchangeRate(), 30 * 60 * 1000);
+
+    // ... after all components are loaded (inside loadedComponents === components.length check)
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logout();
+        });
+    }
 });
 
 // Add global state for categories and sources
@@ -761,18 +770,6 @@ function logout() {
     localStorage.removeItem('token');
     window.location.href = '/login.html';
 }
-
-// Add logout button to the page
-document.addEventListener('DOMContentLoaded', () => {
-    const header = document.querySelector('header');
-    if (header) {
-        const logoutButton = document.createElement('button');
-        logoutButton.textContent = 'Logout';
-        logoutButton.className = 'bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600';
-        logoutButton.onclick = logout;
-        header.appendChild(logoutButton);
-    }
-});
 
 // Update all fetch calls to use fetchWithAuth
 // ... existing code ...

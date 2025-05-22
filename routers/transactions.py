@@ -18,6 +18,9 @@ class Transaction(BaseModel):
     category_id: int
     source_id: int
     your_currency_rate: float
+    category: Optional[str] = None
+    source: Optional[str] = None
+    is_deposit: Optional[bool] = None
 
 class TransactionCreate(BaseModel):
     name: str
@@ -183,7 +186,7 @@ async def add_income(
 ):
     """Add income to a source"""
     # Get category ID
-    categories = {cat[1].lower(): cat[0] for cat in db.get_all_categories(current_user[0])}
+    categories = {cat[1].lower(): cat[0] for cat in db.get_all_categories()}
     category_name = income.category_name.lower()
     
     if category_name not in categories:

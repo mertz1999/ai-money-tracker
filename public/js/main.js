@@ -290,8 +290,8 @@ function saveTransaction() {
     const is_usd = document.getElementById('transactionCurrency').value === 'true';
     const category_name = document.getElementById('transactionCategory').value;
     const source_name = document.getElementById('transactionSource').value;
-    // const transactionType = document.getElementById('transactionType').value;
-    // const is_deposit = transactionType === 'income';
+    const transactionType = document.getElementById('transactionType').value;
+    const is_deposit = transactionType === 'income';
     
     // Validate form
     if (!name || !date || isNaN(price) || !category_name || !source_name) {
@@ -307,16 +307,31 @@ function saveTransaction() {
         return;
     }
 
-    // Always use /api/add_transaction and send IDs
-    const requestData = {
-        name,
-        date,
-        price: Math.abs(price),
-        is_usd,
-        category_id: cat.id,
-        source_id: src.id
-    };
-    const endpoint = '/api/add_transaction';
+    let requestData, endpoint;
+    if (is_deposit) {
+        // For income, use names and /api/add_income
+        requestData = {
+            name,
+            date,
+            price: Math.abs(price),
+            is_usd,
+            category_name,
+            source_name,
+            is_deposit: true
+        };
+        endpoint = '/api/add_income';
+    } else {
+        // For expense, use IDs and /api/add_transaction
+        requestData = {
+            name,
+            date,
+            price: Math.abs(price),
+            is_usd,
+            category_id: cat.id,
+            source_id: src.id
+        };
+        endpoint = '/api/add_transaction';
+    }
 
     // Show loading state
     const saveBtn = document.getElementById('saveTransactionBtn');

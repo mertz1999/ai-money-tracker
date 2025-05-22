@@ -5,7 +5,6 @@ from routers import transactions, categories, sources, users
 from modules.database import Database
 from modules.currency_exchange import CurrencyExchange
 from modules.transaction_parser import TransactionParser
-from modules.reports import Reports
 import os
 from dotenv import load_dotenv
 

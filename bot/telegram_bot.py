@@ -334,6 +334,9 @@ async def set_bot_commands(application):
     ]
     await application.bot.set_my_commands(commands)
 
+async def latest_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await latest_transactions_command(update, context)
+
 if __name__ == "__main__":
     if not TELEGRAM_BOT_TOKEN:
         print("Please set TELEGRAM_BOT_TOKEN in bot/.env")
@@ -343,6 +346,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("add", add_command))
     app.add_handler(CommandHandler("whoami", whoami_command))
+    app.add_handler(CommandHandler("latest", latest_command))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("Bot is running. Press Ctrl+C to stop.")

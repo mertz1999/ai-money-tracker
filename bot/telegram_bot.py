@@ -17,7 +17,7 @@ import logging
 import requests
 import json
 from dotenv import load_dotenv
-from telegram import Update, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters, CallbackQueryHandler
 
 # Load environment variables
@@ -218,11 +218,20 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await whoami_command(update, context)
     await query.answer()
 
+async def set_bot_commands(application):
+    commands = [
+        BotCommand("start", "Start the bot"),
+        BotCommand("add", "Add a new transaction"),
+        BotCommand("help", "Show help"),
+        BotCommand("whoami", "Show your Telegram and app user ID"),
+    ]
+    await application.bot.set_my_commands(commands)
+
 if __name__ == "__main__":
     if not TELEGRAM_BOT_TOKEN:
         print("Please set TELEGRAM_BOT_TOKEN in bot/.env")
         exit(1)
-    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+    app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).post_init(set_bot_commands).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("add", add_command))

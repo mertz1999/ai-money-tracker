@@ -97,13 +97,23 @@ async def smart_reply(update, text, **kwargs):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_user.id
     token = get_token(chat_id)
+    welcome_msg = (
+        "👋 <b>Welcome to AI Money Tracker Bot!</b>\n\n"
+        "💸 <b>Effortlessly track your expenses and income.</b>\n"
+        "🤖 <b>Let AI help you parse and categorize your transactions.</b>\n"
+        "📊 <b>Instantly see your latest activity and balances.</b>\n"
+        "🔒 <b>Your data is secure and only accessible by you.</b>\n\n"
+        "✨ <i>To get started, simply tap the buttons below or type your transaction in plain English (e.g., \"I spent $20 on groceries\").</i>\n\n"
+        "<b>Ready to take control of your finances? Let's go! 🚀</b>"
+    )
     if not token:
         user_login_state[chat_id] = {"step": "username"}
-        await smart_reply(update, "👋 Welcome! Please enter your username to log in:")
+        await smart_reply(update, "👋 Please enter your username to log in:")
         return
     await smart_reply(
         update,
-        "👋 Welcome back! Choose an option below.",
+        welcome_msg,
+        parse_mode='HTML',
         reply_markup=get_main_menu_inline_keyboard()
     )
 
@@ -113,7 +123,9 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/start - Welcome message\n"
         "/help - Show this help\n"
         "/add - Add a new transaction (the next message will be parsed)\n"
-        "/whoami - Show your Telegram and app user ID (for debugging)"
+        "/latest - Show your latest transactions\n"
+        "/whoami - Show your Telegram and app user ID (for debugging)",
+        reply_markup=get_main_menu_inline_keyboard()
     )
 
 async def whoami_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -78,6 +78,7 @@ def delete_token(chat_id):
 def get_main_menu_inline_keyboard():
     keyboard = [
         [InlineKeyboardButton("➕ Add Transaction", callback_data="add")],
+        [InlineKeyboardButton("📄 Latest Transactions", callback_data="latest")],
         [InlineKeyboardButton("❓ Help", callback_data="help")],
         [InlineKeyboardButton("👤 Who am I?", callback_data="whoami")]
     ]
@@ -206,6 +207,48 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "To add a transaction, use /add and then send your transaction description."
         )
 
+async def latest_transactions_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_user.id
+    token = get_token(chat_id)
+    if not token:
+        await smart_reply(update, "❌ You are not authorized. Please log in first.")
+        return
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = requests.get(f"{API_BASE_URL}/api/transactions", headers=headers)
+        if resp.status_code == 401:
+            delete_token(chat_id)
+            user_login_state[chat_id] = {"step": "username"}
+            await smart_reply(update, "❌ Token expired or invalid. Please enter your username:")
+            return
+        if not resp.ok:
+            await smart_reply(update, f"❌ Failed to fetch transactions: {resp.text}")
+            return
+        transactions = resp.json()
+        if not transactions:
+            await smart_reply(update, "No transactions found.")
+            return
+        # Sort by date descending (if not already sorted)
+        transactions.sort(key=lambda x: x.get('date', ''), reverse=True)
+        latest = transactions[:5]
+        msg = "<b>📄 Latest 5 Transactions</b>\n\n"
+        for idx, t in enumerate(latest, 1):
+            amount = t.get('price', 0)
+            currency = '💵 USD' if t.get('is_usd') else '💴 Toman'
+            category = t.get('category', '') or '—'
+            source = t.get('source', '') or '—'
+            msg += (
+                f"<b>{idx}.</b> <b>{t.get('name', '')}</b>\n"
+                f"   📅 <b>Date:</b> {t.get('date', '')}\n"
+                f"   💰 <b>Amount:</b> <code>{amount}</code> {currency}\n"
+                f"   🏷️ <b>Category:</b> {category}\n"
+                f"   🏦 <b>Source:</b> {source}\n"
+                f"<i>───────────────</i>\n"
+            )
+        await smart_reply(update, msg, parse_mode='HTML')
+    except Exception as e:
+        await smart_reply(update, f"❌ Error: {e}")
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
@@ -216,6 +259,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await help_command(update, context)
     elif data == "whoami":
         await whoami_command(update, context)
+    elif data == "latest":
+        await latest_transactions_command(update, context)
     await query.answer()
 
 async def set_bot_commands(application):

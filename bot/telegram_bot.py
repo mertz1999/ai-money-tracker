@@ -82,6 +82,7 @@ def get_main_menu_inline_keyboard():
     keyboard = [
         [InlineKeyboardButton("➕ Add Transaction", callback_data="add")],
         [InlineKeyboardButton("📄 Latest Transactions", callback_data="latest")],
+        [InlineKeyboardButton("💱 Latest Exchange Rate", callback_data="exchange")],
         [InlineKeyboardButton("❓ Help", callback_data="help")],
         [InlineKeyboardButton("👤 Who am I?", callback_data="whoami")]
     ]
@@ -318,6 +319,33 @@ async def save_parsed_transaction(update: Update, context: ContextTypes.DEFAULT_
     except Exception as e:
         await smart_reply(update, f"❌ Error: {e}")
 
+async def exchange_rate_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_user.id
+    token = get_token(chat_id)
+    if not token:
+        await smart_reply(update, "❌ You are not authorized. Please log in first.")
+        return
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = requests.get(f"{API_BASE_URL}/api/exchange_rate", headers=headers)
+        if resp.status_code == 401:
+            delete_token(chat_id)
+            user_login_state[chat_id] = {"step": "username"}
+            await smart_reply(update, "❌ Token expired or invalid. Please enter your username:")
+            return
+        if not resp.ok:
+            await smart_reply(update, f"❌ Failed to fetch exchange rate: {resp.text}")
+            return
+        data = resp.json()
+        msg = (
+            f"💱 <b>Latest Exchange Rate</b>\n\n"
+            f"1 USD = <b>{data.get('rate')}</b> Toman\n"
+            f"🕒 <i>Last updated: {data.get('timestamp')}</i>"
+        )
+        await smart_reply(update, msg, parse_mode='HTML')
+    except Exception as e:
+        await smart_reply(update, f"❌ Error: {e}")
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
@@ -330,6 +358,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await whoami_command(update, context)
     elif data == "latest":
         await latest_transactions_command(update, context)
+    elif data == "exchange":
+        await exchange_rate_command(update, context)
     elif data == "confirm_save":
         await save_parsed_transaction(update, context)
     elif data == "confirm_cancel":
@@ -343,6 +373,7 @@ async def set_bot_commands(application):
         BotCommand("latest", "Show latest transactions"),
         BotCommand("help", "Show help"),
         BotCommand("whoami", "Show your Telegram and app user ID"),
+        BotCommand("exchange", "Show latest exchange rate"),
     ]
     await application.bot.set_my_commands(commands)
 
@@ -359,6 +390,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("add", add_command))
     app.add_handler(CommandHandler("whoami", whoami_command))
     app.add_handler(CommandHandler("latest", latest_command))
+    app.add_handler(CommandHandler("exchange", exchange_rate_command))
     app.add_handler(CallbackQueryHandler(button_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("Bot is running. Press Ctrl+C to stop.")

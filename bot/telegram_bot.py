@@ -265,8 +265,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def set_bot_commands(application):
     commands = [
-        BotCommand("start", "Start the bot"),
         BotCommand("add", "Add a new transaction"),
+        BotCommand("latest", "Show latest transactions"),
         BotCommand("help", "Show help"),
         BotCommand("whoami", "Show your Telegram and app user ID"),
     ]

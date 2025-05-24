@@ -1,199 +1,137 @@
+# <p align="center"><img src="public/img/logo.png" alt="AI Money Tracker Logo" width="120" style="border-radius:50%;"></p>
+
 # AI Money Tracker
 
-A Python-based money tracking system that uses AI to parse transaction information from natural language input and manages financial data with support for multiple currencies.
+## 💸 Effortless, AI-Powered Personal Finance
 
-## Features
+AI Money Tracker is a modern, open-source personal finance app that helps you track your expenses and income with ease. It features a FastAPI backend, a beautiful web UI, and a powerful Telegram bot—all enhanced by AI for smart transaction parsing and categorization.
 
-- Natural language transaction parsing using OpenRouter API
-- Multi-currency support (USD and Toman) with automatic conversion
-- SQLite database for storing transactions, categories, and sources
-- Transaction categorization and source tracking
-- Report generation with charts
-- Cached currency exchange rates
-- Beautiful web dashboard with Bootstrap
-- RESTful API built with FastAPI
-- Optional Nginx setup for production deployment
+---
 
-## Project Structure
+## 🚀 Features
 
-```
-ai-money-tracker/
-├── modules/
-│   ├── database.py         # Database operations
-│   ├── currency_exchange.py # Currency conversion
-│   ├── transaction_parser.py # AI-powered transaction parsing
-│   └── reports.py          # Report generation
-├── routers/
-│   ├── categories.py       # Categories endpoints
-│   ├── sources.py          # Sources endpoints
-│   └── transactions.py     # Transactions endpoints
-├── public/                 # Web interface files
-│   ├── css/                # CSS stylesheets
-│   ├── js/                 # JavaScript files
-│   └── index.html          # Main dashboard
-├── reports/                # Generated reports and charts
-├── main.py                 # FastAPI application with run script
-├── nginx.conf              # Nginx configuration for UI
-├── start_servers.sh        # Script to start both FastAPI and Nginx
-├── .env                    # Environment variables
-├── requirements.txt        # Project dependencies
-└── create_database.py      # Database initialization
-```
+- **AI-Powered Transaction Parsing**: Add transactions in plain English (e.g., "I spent $20 on groceries") and let AI do the rest.
+- **Expense & Income Tracking**: Log, categorize, and review all your financial activity.
+- **Multi-Source & Multi-Currency**: Track balances across cash, bank accounts, cards, and more, in USD or Toman.
+- **Live Exchange Rates**: Instantly see the latest USD/Toman rates.
+- **Modern Web UI**: Responsive, intuitive dashboard with charts, summaries, and quick actions.
+- **Telegram Bot Integration**: Add and review transactions, get summaries, and check exchange rates—all from Telegram.
+- **Secure & Private**: Your data is yours. All authentication is JWT-based.
 
-## Setup
+---
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Create a `.env` file with your API keys:
-   ```
-   OPENROUTER_API_KEY=your_api_key_here
-   OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-   OPENROUTER_MODEL=gpt-3.5-turbo
-   ```
-4. Initialize the database:
-   ```bash
-   python create_database.py
-   ```
+## 🖥️ Web App
 
-## Running the Application
+- **Frontend**: HTML, CSS, JavaScript (in `public/`)
+- **Backend**: FastAPI (in `main.py`, `routers/`, `modules/`)
+- **Database**: SQLite (default, file: `money_tracker.db`)
 
-### Option 1: FastAPI only (Development)
-Run the FastAPI server:
+---
+
+## 🤖 Telegram Bot
+
+- Add transactions, get summaries, and check exchange rates directly from Telegram.
+- Supports AI-powered natural language parsing.
+- All actions available via glass (inline) buttons for a modern UX.
+
+---
+
+## ⚡ Quick Start
+
+### 1. Clone the Repository
 ```bash
-python main.py
+git clone https://github.com/yourusername/ai-money-tracker.git
+cd ai-money-tracker
 ```
-Access the API at http://localhost:9000
 
-### Option 2: Nginx + FastAPI (Recommended for Production)
-For a production-like setup with Nginx serving the UI and FastAPI handling only the API:
+### 2. Install Dependencies
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 3. Set Up Environment Variables
+- Copy `.env.example` to `.env` and fill in the required values (see below).
+- For the Telegram bot, set `TELEGRAM_BOT_TOKEN` and (optionally) `API_BASE_URL` in `bot/.env`.
+
+### 4. Initialize the Database
+```bash
+python create_database.py
+```
+
+### 5. Run the Backend (Development)
+```bash
+uvicorn main:app --reload
+```
+
+### 6. Run the Telegram Bot
+```bash
+cd bot
+python telegram_bot.py
+```
+
+### 7. Open the Web App
+- Go to [http://localhost:9000](http://localhost:9000) in your browser.
+
+---
+
+## 🌐 Production Deployment with Nginx
+
+For production, it is recommended to use **Nginx** as a reverse proxy and static file server for the web UI, with FastAPI serving the API only.
+
+- Use the provided `nginx.conf` for configuration.
+- Start both FastAPI and Nginx together using the script:
+
 ```bash
 ./start_servers.sh
 ```
-Access the UI at http://localhost:8080 and the API at http://localhost:9000
 
-For detailed instructions on the Nginx setup, see [NGINX_SETUP.md](NGINX_SETUP.md).
+- By default, the UI will be available at [http://localhost:8080](http://localhost:8080) and the API at [http://localhost:9000](http://localhost:9000).
 
-## API Documentation
+See `NGINX_SETUP.md` for more details and advanced configuration.
 
-When running the application, you can access the API documentation at:
-- http://localhost:9000/docs (FastAPI only setup)
-- http://localhost:8080/docs (Nginx + FastAPI setup)
+---
 
-## Usage
+## 🔑 Environment Variables
 
-### Web Interface
+- `.env` (project root):
+  - `SECRET_KEY` (for JWT)
+  - `DATABASE_URL` (optional, default is SQLite)
+- `bot/.env`:
+  - `TELEGRAM_BOT_TOKEN` (required)
+  - `API_BASE_URL` (default: http://localhost:9000)
 
-The web interface provides a beautiful dashboard for managing your finances:
+---
 
-- View your total balance in USD and Toman
-- Track your expenses by category
-- Manage your sources (bank accounts, cash, etc.)
-- Add transactions and income
-- Generate reports
+## 📚 API Overview
 
-The UI interacts directly with the RESTful API endpoints.
+- `POST   /api/register` — Register a new user
+- `POST   /api/token` — Login and get JWT
+- `GET    /api/me` — Get current user info
+- `GET    /api/categories` — List categories
+- `GET    /api/sources` — List sources
+- `POST   /api/add_source` — Add a new source
+- `GET    /api/transactions` — List all transactions
+- `POST   /api/add_transaction` — Add an expense
+- `POST   /api/add_income` — Add income
+- `POST   /api/parse_transaction` — AI parse a transaction description
+- `GET    /api/exchange_rate` — Get latest exchange rate
 
-### Transaction Parsing
-```python
-from modules.transaction_parser import TransactionParser
+See `endpoints.md` for full details.
 
-parser = TransactionParser()
-transaction = parser.parse_transaction("I spent 50 dollars on groceries at Walmart")
-print(transaction)
-```
+---
 
-### Reports
-```python
-from modules.reports import Reports
+## 🤝 Contributing
 
-reports = Reports()
-report = reports.generate_sources_report()
-print(report)
-```
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
-### API Endpoints
+- Follow PEP8 and best practices for Python code.
+- Keep UI/UX modern and user-friendly.
+- All features should be accessible via both the web app and Telegram bot where possible.
 
-The system provides RESTful API endpoints for integration:
+---
 
-- `GET /api/categories` - Get all categories
-- `GET /api/sources` - Get all sources
-- `GET /api/transactions` - Get all transactions
-- `POST /api/parse_transaction` - Parse transaction text
-- `POST /api/add_transaction` - Add a new transaction
-- `POST /api/add_income` - Add income
-- `POST /api/add_source` - Add a new source
+## 📄 License
 
-## TODO List
-
-### Core Functionality
-- [x] Enhance transaction parsing
-  - [x] Add more test cases for text-to-transaction conversion
-  - [x] Define and implement input schema validation
-  - [x] Improve error handling for malformed inputs
-  - [x] Add support for more transaction types
-
-### Database Integration
-- [x] Connect transaction parser to database
-  - [x] Implement transaction insertion
-  - [x] Add transaction validation
-  - [x] Create transaction update/delete functionality
-- [x] Implement source management
-  - [x] Add functionality to add new sources
-  - [x] Add functionality to remove sources
-  - [x] Add source balance tracking
-- [x] Handle income transactions
-  - [x] Define income categories
-  - [x] Implement income tracking
-  - [x] Add income reports
-
-### Transaction Management
-- [x] Implement transaction balance updates
-  - [x] Add automatic source balance updates
-  - [x] Handle currency conversions
-  - [x] Add transaction history tracking
-
-### User Interface
-- [ ] Create Telegram bot integration
-  - [ ] Add command handlers
-  - [ ] Implement transaction input via bot
-  - [ ] Add report generation commands
-  - [ ] Add source management commands
-- [x] Develop web interface
-  - [x] Create Bootstrap-based HTML pages
-  - [x] Implement dashboard
-  - [x] Add transaction management interface
-  - [x] Add report visualization
-  - [x] Add source management interface
-
-### System Improvements
-- [x] Migrate from Flask to FastAPI
-  - [x] Create FastAPI application
-  - [x] Implement Pydantic models
-  - [x] Add dependency injection
-  - [x] Setup automatic documentation
-- [x] Deploy with Nginx
-  - [x] Create Nginx configuration
-  - [x] Setup static file serving
-  - [x] Configure API proxying
-- [ ] Make the system more dynamic
-  - [ ] Add configuration management
-  - [ ] Implement plugin system
-  - [ ] Add support for more currencies
-  - [x] Create API endpoints
-  - [ ] Add user authentication
-  - [ ] Implement data backup/restore
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.

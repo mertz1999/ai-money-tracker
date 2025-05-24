@@ -74,6 +74,9 @@ def delete_token(chat_id):
         del tokens[str(chat_id)]
         save_tokens(tokens)
 
+# State for pending parsed transaction per user
+pending_transaction = {}  # chat_id: parsed_transaction_dict
+
 # Inline (glass) buttons for main menu
 def get_main_menu_inline_keyboard():
     keyboard = [
@@ -187,16 +190,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 user_add_state[chat_id] = False
                 return
             data = resp.json()
+            pending_transaction[chat_id] = data  # Store parsed transaction
             summary = (
-                f"*Parsed Transaction:*\n"
-                f"Name: {data.get('name')}\n"
-                f"Date: {data.get('date')}\n"
-                f"Amount: {data.get('price')} {'USD' if data.get('is_usd') else 'Toman'}\n"
-                f"Category: {data.get('category_name')}\n"
-                f"Source: {data.get('source_name')}\n"
-                f"Type: {'Income' if data.get('is_deposit') else 'Expense'}"
+                f"<b>Parsed Transaction:</b>\n"
+                f"Name: <b>{data.get('name')}</b>\n"
+                f"Date: <b>{data.get('date')}</b>\n"
+                f"Amount: <b>{data.get('price')}</b> {'USD' if data.get('is_usd') else 'Toman'}\n"
+                f"Category: <b>{data.get('category_name')}</b>\n"
+                f"Source: <b>{data.get('source_name')}</b>\n"
+                f"Type: <b>{'Income' if data.get('is_deposit') else 'Expense'}</b>\n\n"
+                "Do you want to save this transaction?"
             )
-            await smart_reply(update, summary, parse_mode='Markdown')
+            confirm_keyboard = InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Save", callback_data="confirm_save"),
+                 InlineKeyboardButton("❌ Cancel", callback_data="confirm_cancel")]
+            ])
+            await smart_reply(update, summary, parse_mode='HTML', reply_markup=confirm_keyboard)
         except Exception as e:
             logger.error(f"Error handling message: {e}")
             await smart_reply(update, "❌ An error occurred while processing your request.")
@@ -249,10 +258,58 @@ async def latest_transactions_command(update: Update, context: ContextTypes.DEFA
     except Exception as e:
         await smart_reply(update, f"❌ Error: {e}")
 
+async def save_parsed_transaction(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_user.id
+    token = get_token(chat_id)
+    data = pending_transaction.pop(chat_id, None)
+    if not token or not data:
+        await smart_reply(update, "❌ No transaction to save or not authorized.")
+        return
+    try:
+        headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+        if data.get('is_deposit'):
+            # Income: use names and /api/add_income
+            payload = {
+                "name": data.get("name"),
+                "date": data.get("date"),
+                "price": abs(data.get("price", 0)),
+                "is_usd": data.get("is_usd"),
+                "category_name": data.get("category_name"),
+                "source_name": data.get("source_name"),
+                "is_deposit": True
+            }
+            endpoint = "/api/add_income"
+        else:
+            # Expense: use IDs and /api/add_transaction
+            # Fetch categories and sources to map names to IDs
+            categories = requests.get(f"{API_BASE_URL}/api/categories", headers=headers).json()
+            sources = requests.get(f"{API_BASE_URL}/api/sources", headers=headers).json()
+            cat = next((c for c in categories if c['name'].lower() == data.get('category_name', '').lower()), None)
+            src = next((s for s in sources if s['name'].lower() == data.get('source_name', '').lower()), None)
+            if not cat or not src:
+                await smart_reply(update, "❌ Could not find category or source for this transaction.")
+                return
+            payload = {
+                "name": data.get("name"),
+                "date": data.get("date"),
+                "price": abs(data.get("price", 0)),
+                "is_usd": data.get("is_usd"),
+                "category_id": cat['id'],
+                "source_id": src['id']
+            }
+            endpoint = "/api/add_transaction"
+        resp = requests.post(f"{API_BASE_URL}{endpoint}", headers=headers, json=payload)
+        if resp.ok:
+            await smart_reply(update, "✅ Transaction saved!")
+        else:
+            await smart_reply(update, f"❌ Failed to save transaction: {resp.text}")
+    except Exception as e:
+        await smart_reply(update, f"❌ Error: {e}")
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     data = query.data
-    # Use the same chat_id logic as in other handlers
+    chat_id = update.effective_user.id
     if data == "add":
         await add_command(update, context)
     elif data == "help":
@@ -261,6 +318,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await whoami_command(update, context)
     elif data == "latest":
         await latest_transactions_command(update, context)
+    elif data == "confirm_save":
+        await save_parsed_transaction(update, context)
+    elif data == "confirm_cancel":
+        pending_transaction.pop(chat_id, None)
+        await query.edit_message_text("❌ Transaction not saved.")
     await query.answer()
 
 async def set_bot_commands(application):

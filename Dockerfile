@@ -15,12 +15,16 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy the rest of the application code
 COPY . .
 
-# Copy entrypoint script and set permissions
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh start_servers.sh
+# Make sure start_servers.sh is executable
+RUN chmod +x start_servers.sh
 
 # Expose backend and frontend ports
 EXPOSE 9000 8080
 
-# Use the entrypoint script
-ENTRYPOINT ["./docker-entrypoint.sh"] 
+# Start all services: Nginx (via start_servers.sh), FastAPI backend, and Telegram bot
+CMD sh -c './start_servers.sh & NGINX_PID=$!; \
+           uvicorn main:app --host 0.0.0.0 --port 9000 & BACKEND_PID=$!; \
+           python bot/telegram_bot.py & BOT_PID=$!; \
+           wait -n $NGINX_PID $BACKEND_PID $BOT_PID; \
+           kill -TERM $NGINX_PID $BACKEND_PID $BOT_PID; \
+           exit 1' 

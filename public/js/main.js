@@ -46,6 +46,16 @@ document.addEventListener('DOMContentLoaded', function() {
             // Load categories and sources when modal is opened
             loadCategories();
             loadSources();
+            // Always reset the form and show all fields
+            const addTransactionForm = document.getElementById('addTransactionForm');
+            if (addTransactionForm) {
+                addTransactionForm.reset();
+            }
+            // Hide parsed details section by default
+            const parsedDetails = document.getElementById('parsedTransactionDetails');
+            if (parsedDetails) {
+                parsedDetails.style.display = 'none';
+            }
             const saveTransactionBtn = document.getElementById('saveTransactionBtn');
             if (saveTransactionBtn) {
                 // Remove previous listeners to avoid duplicates

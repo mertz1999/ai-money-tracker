@@ -21,7 +21,9 @@
                             </div>
                         </button>
                     </div>
-                    <div id="parsedTransactionDetails">
+                    <!-- Always show the transaction fields, parsed details just fills them -->
+                    <div id="parsedTransactionDetails" style="display: none;"></div>
+                    <div id="transactionFields">
                         <div class="mb-3">
                             <label for="transactionType" class="form-label">Transaction Type</label>
                             <select class="form-select" id="transactionType">

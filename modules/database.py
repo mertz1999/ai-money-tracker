@@ -83,8 +83,8 @@ class Database:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    """INSERT INTO users (username, email, password_hash, created_at)
-                       VALUES (?, ?, ?, ?)""",
+                    """INSERT INTO users (username, email, password_hash)
+                       VALUES (?, ?, ?)""",
                     (username, email, password_hash, datetime.now().isoformat())
                 )
                 user_id = cursor.lastrowid

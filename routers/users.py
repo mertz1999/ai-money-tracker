@@ -94,7 +94,6 @@ def register_user(user: UserCreate, db: Database = Depends(get_db)):
         "id": user_data[0],
         "username": user_data[1],
         "email": user_data[2],
-        "created_at": user_data[4]
     }
 
 @router.post("/api/token", response_model=Token)

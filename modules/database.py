@@ -21,7 +21,8 @@ class Database:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE NOT NULL,
                     email TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL
+                    password_hash TEXT NOT NULL,
+                    created_at TEXT NOT NULL
                 )
             ''')
             
@@ -83,14 +84,15 @@ class Database:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    """INSERT INTO users (username, email, password_hash)
-                       VALUES (?, ?, ?)""",
+                    """INSERT INTO users (username, email, password_hash, created_at)
+                       VALUES (?, ?, ?, ?)""",
                     (username, email, password_hash, datetime.now().isoformat())
                 )
                 user_id = cursor.lastrowid
                 conn.commit()
                 return user_id
-        except sqlite3.IntegrityError:
+        except sqlite3.IntegrityError as e:
+            print(f"Database integrity error: {e}")
             return None
 
     def get_user_by_username(self, username):

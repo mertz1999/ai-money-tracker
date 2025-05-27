@@ -25,7 +25,6 @@ class User(BaseModel):
     id: int
     username: str
     email: str
-    created_at: str
 
 class Token(BaseModel):
     access_token: str

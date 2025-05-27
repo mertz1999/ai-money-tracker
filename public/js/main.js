@@ -85,6 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
             logout();
         });
     }
+
+    fetchAndDisplayTotalBalance(); // Fetch total balance on page load
 });
 
 // Add global state for categories and sources
@@ -443,76 +445,94 @@ function saveSource() {
     });
 }
 
+// Fetch and display total balance from backend
+async function fetchAndDisplayTotalBalance() {
+    if (!checkAuth()) return;
+    try {
+        const response = await fetchWithAuth('/api/totalsource?usd=true');
+        if (response && response.ok) {
+            const data = await response.json();
+            const totalBalanceEl = document.getElementById('totalBalance');
+            if (totalBalanceEl) {
+                totalBalanceEl.textContent = `$${data.total_usd.toFixed(2)}`;
+            }
+        } else {
+            const totalBalanceEl = document.getElementById('totalBalance');
+            if (totalBalanceEl) {
+                totalBalanceEl.textContent = 'Error';
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching total balance:', error);
+        const totalBalanceEl = document.getElementById('totalBalance');
+        if (totalBalanceEl) {
+            totalBalanceEl.textContent = 'Error';
+        }
+    }
+}
+
 // Update sources table
 function updateSourcesTable(sources) {
     const tbody = document.querySelector('#sources-table tbody');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    let totalUSD = 0;
-    let totalToman = 0;
-    
-    sources.forEach(source => {
-        const row = document.createElement('tr');
-        
-        // Calculate icon and background class
-        let iconClass = source.bank ? 'fa-university' : 'fa-wallet';
-        let bgClass = source.usd ? 'bg-success' : 'bg-primary';
-        
-        // Calculate values in different currencies
-        let valueInUSD, valueInToman, defaultValue;
-        if (source.usd) {
-            valueInUSD = source.value;
-            valueInToman = source.value * currentExchangeRate;
-            defaultValue = `$${source.value.toFixed(2)}`;
-        } else {
-            valueInUSD = source.value / currentExchangeRate;
-            valueInToman = source.value;
-            defaultValue = `${source.value.toLocaleString()} T`;
-        }
-        
-        // Format value based on display mode
-        let formattedValue;
-        switch (sourceDisplayMode) {
-            case 'usd':
-                formattedValue = `$${valueInUSD.toFixed(2)}`;
-                break;
-            case 'toman':
-                formattedValue = `${valueInToman.toLocaleString()} T`;
-                break;
-            default:
-                formattedValue = defaultValue;
-        }
+    if (tbody) {
+        tbody.innerHTML = '';
+        sources.forEach(source => {
+            const row = document.createElement('tr');
             
-        // Update totals
-        totalUSD += valueInUSD;
-        totalToman += valueInToman;
-        
-        row.innerHTML = `
-            <td>
-                <div class="d-flex align-items-center">
-                    <div class="source-icon ${bgClass}">
-                        <i class="fas ${iconClass}"></i>
+            // Calculate icon and background class
+            let iconClass = source.bank ? 'fa-university' : 'fa-wallet';
+            let bgClass = source.usd ? 'bg-success' : 'bg-primary';
+            
+            // Calculate values in different currencies
+            let valueInUSD, valueInToman, defaultValue;
+            if (source.usd) {
+                valueInUSD = source.value;
+                valueInToman = source.value * currentExchangeRate;
+                defaultValue = `$${source.value.toFixed(2)}`;
+            } else {
+                valueInUSD = source.value / currentExchangeRate;
+                valueInToman = source.value;
+                defaultValue = `${source.value.toLocaleString()} T`;
+            }
+            
+            // Format value based on display mode
+            let formattedValue;
+            switch (sourceDisplayMode) {
+                case 'usd':
+                    formattedValue = `$${valueInUSD.toFixed(2)}`;
+                    break;
+                case 'toman':
+                    formattedValue = `${valueInToman.toLocaleString()} T`;
+                    break;
+                default:
+                    formattedValue = defaultValue;
+            }
+                
+            row.innerHTML = `
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="source-icon ${bgClass}">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="mb-0">${source.name}</h6>
+                        </div>
                     </div>
-                    <div class="ms-3">
-                        <h6 class="mb-0">${source.name}</h6>
-                    </div>
-                </div>
-            </td>
-            <td>${source.bank ? 'Bank' : 'Cash'}</td>
-            <td class="source-value" 
-                data-usd="${valueInUSD.toFixed(2)}"
-                data-toman="${valueInToman.toLocaleString()}"
-                data-default="${defaultValue}">
-                ${formattedValue}
-            </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
-    
-    // Update summary cards with totals
-    updateBalanceSummary(totalUSD, totalToman);
+                </td>
+                <td>${source.bank ? 'Bank' : 'Cash'}</td>
+                <td class="source-value" 
+                    data-usd="${valueInUSD.toFixed(2)}"
+                    data-toman="${valueInToman.toLocaleString()}"
+                    data-default="${defaultValue}">
+                    ${formattedValue}
+                </td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+    // Always update the Total Balance card from backend
+    fetchAndDisplayTotalBalance();
 }
 
 // Function to toggle source display mode

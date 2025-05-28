@@ -72,11 +72,12 @@ def get_parser_dependency():
 # API routes
 @router.get("/api/transactions", response_model=List[Transaction])
 async def get_transactions(
+    month: Optional[int] = Query(None, ge=1, le=12),
     current_user = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """Get all transactions for the current user"""
-    transactions = db.get_all_transactions(current_user[0])  # current_user[0] is the user_id
+    """Get all transactions for the current user, optionally filtered by month"""
+    transactions = db.get_all_transactions(current_user[0], month)  # Pass month to DB
     # Fetch all categories and sources for mapping
     categories = {cat[0]: cat[1] for cat in db.get_all_categories()}
     sources = {src[0]: src[1] for src in db.get_all_sources(current_user[0])}

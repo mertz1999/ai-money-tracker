@@ -111,15 +111,22 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('dashboard-content').style.display = 'none';
             const panelContainer = document.getElementById('transactions-panel-container');
             panelContainer.style.display = '';
-            // Always reload the panel and JS to ensure event listeners are attached
+            // Always reload the panel HTML
             const html = await fetch('components/transactions_panel.html').then(r => r.text());
             panelContainer.innerHTML = html;
-            // Remove any old transactions_panel.js script tags
-            document.querySelectorAll('script[src="js/transactions_panel.js"]').forEach(s => s.remove());
-            const script = document.createElement('script');
-            script.src = 'js/transactions_panel.js';
-            script.onload = () => console.log('transactions_panel.js loaded');
-            document.body.appendChild(script);
+            // Only load the script if not already loaded
+            if (!window.initTransactionsPanel) {
+                // Remove any old transactions_panel.js script tags
+                document.querySelectorAll('script[src="js/transactions_panel.js"]').forEach(s => s.remove());
+                const script = document.createElement('script');
+                script.src = 'js/transactions_panel.js';
+                script.onload = () => {
+                    if (window.initTransactionsPanel) window.initTransactionsPanel();
+                };
+                document.body.appendChild(script);
+            } else {
+                window.initTransactionsPanel();
+            }
         } else if (hash === '#dashboard') {
             e.preventDefault();
             document.getElementById('dashboard-content').style.display = '';

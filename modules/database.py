@@ -359,4 +359,23 @@ class Database:
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM transactions WHERE id = ?", (transaction_id,))
-            return cursor.fetchone() 
+            return cursor.fetchone()
+
+    def update_transaction(self, transaction_id, name, date, price, is_usd, category_id, source_id, your_currency_rate, is_deposit):
+        """Update a transaction by its ID"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            # Check ownership
+            cursor.execute("SELECT user_id FROM transactions WHERE id = ?", (transaction_id,))
+            row = cursor.fetchone()
+            if not row:
+                return False
+            # Update transaction
+            cursor.execute(
+                """
+                UPDATE transactions SET name=?, date=?, price_in_dollar=?, your_currency_rate=?, category_id=?, source_id=?, is_deposit=? WHERE id=?
+                """,
+                (name, date, price, your_currency_rate, category_id, source_id, is_deposit, transaction_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0 

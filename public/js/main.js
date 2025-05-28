@@ -97,6 +97,37 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     fetchAndDisplayTotalBalance(); // Fetch total balance on page load
+
+    // Sidebar navigation logic
+    document.body.addEventListener('click', async function(e) {
+        const target = e.target.closest('a[href^="#"]');
+        if (!target) return;
+        const hash = target.getAttribute('href');
+        if (!hash) return;
+        document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
+        if (target.parentElement) target.parentElement.classList.add('active');
+        if (hash === '#transactions') {
+            e.preventDefault();
+            document.getElementById('dashboard-content').style.display = 'none';
+            const panelContainer = document.getElementById('transactions-panel-container');
+            panelContainer.style.display = '';
+            // Always reload the panel and JS to ensure event listeners are attached
+            const html = await fetch('components/transactions_panel.html').then(r => r.text());
+            panelContainer.innerHTML = html;
+            // Remove any old transactions_panel.js script tags
+            document.querySelectorAll('script[src="js/transactions_panel.js"]').forEach(s => s.remove());
+            const script = document.createElement('script');
+            script.src = 'js/transactions_panel.js';
+            script.onload = () => console.log('transactions_panel.js loaded');
+            document.body.appendChild(script);
+        } else if (hash === '#dashboard') {
+            e.preventDefault();
+            document.getElementById('dashboard-content').style.display = '';
+            document.getElementById('transactions-panel-container').style.display = 'none';
+        } else {
+            // For other links, you can add similar logic
+        }
+    });
 });
 
 // Add global state for categories and sources
@@ -606,8 +637,8 @@ function updateTransactionsTable(page = 1) {
         const tomanAmount = amount * tx.your_currency_rate;
         
         // Format amounts for both currencies
-        const usdAmount = `${tx.is_deposit ? '+' : '-'}$${amount.toFixed(2)}`;
-        const tomanAmountStr = `${tx.is_deposit ? '+' : '-'}${tomanAmount.toLocaleString()} T`;
+        const usdAmount = `$${amount.toFixed(2)}`;
+        const tomanAmountStr = `${tomanAmount.toLocaleString()} T`;
         
         // Always start with USD display
         const formattedAmount = displayInUSD ? usdAmount : tomanAmountStr;

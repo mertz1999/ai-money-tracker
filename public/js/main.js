@@ -1,20 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Sidebar toggle functionality
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    const mainContent = document.querySelector('.main-content');
-    
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
-            mainContent.classList.toggle('expanded');
-        });
-    }
-    
     // Initialize transaction type dropdown styling
     const transactionTypeSelect = document.getElementById('transactionType');
     if (transactionTypeSelect) {
-        // Style the dropdown options when they change
+        // Style the dropdown options when they §   change
         transactionTypeSelect.addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             const isIncome = selectedOption.value === 'income';

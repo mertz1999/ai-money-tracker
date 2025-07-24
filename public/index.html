@@ -6,52 +6,55 @@
     <title>AI Money Tracker Dashboard</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome (5.15.4 for compatibility) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Include Sidebar -->
-    <div id="sidebar-container"></div>
+    <div class="page-wrap">
+        <!-- Sidebar Toggle Button (always visible) -->
+        <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div id="sidebar-container"></div>
+        <div class="content-wrap">
+            <div id="topnav-container"></div>
+            <div class="main-content">
+                <!-- Dashboard Content -->
+                <div class="container-fluid dashboard-content" id="dashboard-content">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h1 class="page-title">Dashboard</h1>
+                            <p class="text-muted">Welcome to your financial overview</p>
+                        </div>
+                    </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Include Top Navigation -->
-        <div id="topnav-container"></div>
+                    <!-- Include Summary Cards -->
+                    <div id="summary-cards-container"></div>
 
-        <!-- Dashboard Content -->
-        <div class="container-fluid dashboard-content" id="dashboard-content">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h1 class="page-title">Dashboard</h1>
-                    <p class="text-muted">Welcome to your financial overview</p>
+                    <!-- Sources and Recent Transactions -->
+                    <div class="row">
+                        <div class="col-md-5 mb-3">
+                            <!-- Include Sources Table -->
+                            <div id="sources-table-container"></div>
+                        </div>
+                        <div class="col-md-7 mb-3">
+                            <!-- Include Transactions Table -->
+                            <div id="transactions-table-container"></div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Include Summary Cards -->
-            <div id="summary-cards-container"></div>
-
-            <!-- Sources and Recent Transactions -->
-            <div class="row">
-                <div class="col-md-5 mb-3">
-                    <!-- Include Sources Table -->
-                    <div id="sources-table-container"></div>
-                </div>
-                <div class="col-md-7 mb-3">
-                    <!-- Include Transactions Table -->
-                    <div id="transactions-table-container"></div>
-                </div>
+                <!-- Transactions Management Panel (hidden by default) -->
+                <div id="transactions-panel-container" style="display:none;"></div>
             </div>
         </div>
-        <!-- Transactions Management Panel (hidden by default) -->
-        <div id="transactions-panel-container" style="display:none;"></div>
-    </div>
 
-    <!-- Include Modals -->
-    <div id="modals-container"></div>
+        <!-- Include Modals -->
+        <div id="modals-container"></div>
+    </div>
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -81,6 +84,32 @@
                         
                         // Check if all components are loaded
                         if (loadedComponents === components.length) {
+                            // Sidebar toggle functionality
+                            const sidebarToggle = document.getElementById('sidebar-toggle');
+                            const sidebarContainer = document.getElementById('sidebar-container');
+                            
+                            if (sidebarToggle && sidebarContainer) {
+                                sidebarToggle.addEventListener('click', function() {
+                                    const sidebar = sidebarContainer.querySelector('.sidebar');
+                                    if (sidebar) {
+                                        sidebar.classList.toggle('collapsed');
+                                    }
+                                });
+
+                                // Add a click listener to the document to close the sidebar when clicking outside of it on mobile
+                                document.addEventListener('click', function(event) {
+                                    const sidebar = sidebarContainer.querySelector('.sidebar');
+                                    // Close sidebar if it's open, on mobile, and click is outside sidebar and not the toggle button
+                                    if (window.innerWidth <= 768 && sidebar && !sidebar.classList.contains('collapsed')) {
+                                        const isClickInsideSidebar = sidebar.contains(event.target);
+                                        const isClickOnToggle = sidebarToggle.contains(event.target);
+                                        if (!isClickInsideSidebar && !isClickOnToggle) {
+                                            sidebar.classList.add('collapsed');
+                                        }
+                                    }
+                                });
+                            }
+
                             // Initialize month selector
                             const monthSelector = document.getElementById('monthSelector');
                             if (monthSelector) {

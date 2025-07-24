@@ -4,6 +4,29 @@
         <img src="img/logo.svg" alt="AI Money Tracker" class="logo">
         <h3>Money Tracker</h3>
     </div>
+    <!-- Moved topnav dropdowns here -->
+    <div class="sidebar-controls" style="padding: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+        <div class="dropdown">
+            <button class="btn dropdown-toggle w-100" type="button" id="currencyDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-dollar-sign"></i> USD
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="currencyDropdown">
+                <li><a class="dropdown-item" href="#"><i class="fas fa-dollar-sign"></i> USD</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-money-bill-wave"></i> Toman</a></li>
+            </ul>
+        </div>
+        <div class="dropdown">
+            <button class="btn dropdown-toggle w-100" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-circle"></i>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Profile</a></li>
+                <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </div>
     <ul class="sidebar-menu">
         <li class="active"><a href="#dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
         <li><a href="#transactions"><i class="fas fa-exchange-alt"></i> Transactions</a></li>

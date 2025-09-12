@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add global state for categories and sources
 let allCategories = [];
 let allSources = [];
+let currentEditingTransactionId = null;
 
 // Load categories from API
 async function loadCategories() {
@@ -183,6 +184,9 @@ async function loadTransactions(month = currentMonth) {
             // Update summary and table
             updateTransactionSummary(totals.income, totals.expense);
             updateTransactionsTable(1); // Reset to first page when loading new data
+            
+            // Attach download button event listener after transactions are loaded
+            attachDownloadButtonListener();
         }
     } catch (error) {
         console.error('Error loading transactions:', error);
@@ -1426,9 +1430,306 @@ function initializeMonthSelector() {
             toggleTransactionCurrency();
         });
     }
+    
+    // Initialize edit transaction modal
+    const editTransactionModal = document.getElementById('editTransactionModal');
+    if (editTransactionModal) {
+        editTransactionModal.addEventListener('shown.bs.modal', function() {
+            // Re-attach event listener for save button
+            const saveBtn = document.getElementById('saveEditedTransactionBtn');
+            if (saveBtn) {
+                // Remove existing listeners and add new ones
+                saveBtn.replaceWith(saveBtn.cloneNode(true));
+                document.getElementById('saveEditedTransactionBtn').addEventListener('click', saveEditedTransaction);
+            }
+        });
+    }
+    
+    // Initialize logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logout();
+        });
+    }
+    
+    // Initialize download report button using event delegation
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.id === 'downloadReportBtn') {
+            e.preventDefault();
+            console.log('Download report button clicked');
+            downloadMonthlyReport();
+        }
+    });
+    
+    // Initialize report month/year selectors
+    const reportMonth = document.getElementById('reportMonth');
+    const reportYear = document.getElementById('reportYear');
+    if (reportMonth && reportYear) {
+        // Set current month and year as default
+        const currentDate = new Date();
+        reportMonth.value = currentDate.getMonth() + 1;
+        reportYear.value = currentDate.getFullYear();
+    }
+    
+    // Add fallback event listener for download button (in case it's loaded later)
+    setTimeout(() => {
+        const downloadBtn = document.getElementById('downloadReportBtn');
+        if (downloadBtn && !downloadBtn.hasAttribute('data-listener-attached')) {
+            console.log('Attaching fallback event listener to download button');
+            downloadBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Fallback download button clicked');
+                downloadMonthlyReport();
+            });
+            downloadBtn.setAttribute('data-listener-attached', 'true');
+        }
+    }, 2000);
+}
+
+// Edit transaction functionality
+function editTransaction(transactionId) {
+    currentEditingTransactionId = transactionId;
+    
+    // Find the transaction in allTransactions
+    const transaction = allTransactions.find(tx => tx.id === transactionId);
+    if (!transaction) {
+        alert('Transaction not found');
+        return;
+    }
+    
+    // Populate the edit form
+    populateEditForm(transaction);
+    
+    // Show the edit modal
+    const editModal = new bootstrap.Modal(document.getElementById('editTransactionModal'));
+    editModal.show();
+}
+
+function populateEditForm(transaction) {
+    // Populate form fields
+    document.getElementById('editTransactionType').value = transaction.is_deposit ? 'income' : 'expense';
+    document.getElementById('editTransactionName').value = transaction.name;
+    document.getElementById('editTransactionDate').value = transaction.date;
+    document.getElementById('editTransactionCurrency').value = transaction.is_usd ? 'true' : 'false';
+    document.getElementById('editTransactionAmount').value = transaction.price;
+    
+    // Populate category dropdown
+    const categorySelect = document.getElementById('editTransactionCategory');
+    if (categorySelect) {
+        categorySelect.innerHTML = '';
+        allCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.name;
+            option.textContent = category.name;
+            if (category.name === transaction.category) {
+                option.selected = true;
+            }
+            categorySelect.appendChild(option);
+        });
+    }
+    
+    // Populate source dropdown
+    const sourceSelect = document.getElementById('editTransactionSource');
+    if (sourceSelect) {
+        sourceSelect.innerHTML = '';
+        allSources.forEach(source => {
+            const option = document.createElement('option');
+            option.value = source.name;
+            option.textContent = source.name;
+            if (source.name === transaction.source) {
+                option.selected = true;
+            }
+            sourceSelect.appendChild(option);
+        });
+    }
+}
+
+async function saveEditedTransaction() {
+    if (!currentEditingTransactionId) {
+        alert('No transaction selected for editing');
+        return;
+    }
+    
+    // Get form values
+    const formData = {
+        name: document.getElementById('editTransactionName').value,
+        date: document.getElementById('editTransactionDate').value,
+        price: parseFloat(document.getElementById('editTransactionAmount').value),
+        is_usd: document.getElementById('editTransactionCurrency').value === 'true',
+        category_name: document.getElementById('editTransactionCategory').value,
+        source_name: document.getElementById('editTransactionSource').value,
+        is_deposit: document.getElementById('editTransactionType').value === 'income'
+    };
+    
+    try {
+        const response = await fetchWithAuth(`/api/transactions/${currentEditingTransactionId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            // Close modal
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editTransactionModal'));
+            editModal.hide();
+            
+            // Reload transactions
+            const month = window.currentMonth || new Date().getMonth() + 1;
+            loadTransactions(month);
+            
+            // Reset editing state
+            currentEditingTransactionId = null;
+        } else {
+            const errorData = await response.json();
+            alert('Error updating transaction: ' + (errorData.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error updating transaction:', error);
+        alert('Error updating transaction');
+    }
+}
+
+function deleteTransaction(transactionId) {
+    if (!confirm('Are you sure you want to delete this transaction?')) {
+        return;
+    }
+    
+    fetchWithAuth(`/api/transactions/${transactionId}`, {
+        method: 'DELETE'
+    })
+    .then(response => {
+        if (response.ok) {
+            // Reload transactions
+            const month = window.currentMonth || new Date().getMonth() + 1;
+            loadTransactions(month);
+        } else {
+            return response.json().then(data => {
+                alert('Error deleting transaction: ' + (data.detail || 'Unknown error'));
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting transaction:', error);
+        alert('Error deleting transaction');
+    });
+}
+
+// Logout functionality
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        // Clear stored token
+        localStorage.removeItem('token');
+        // Redirect to login page
+        window.location.href = '/login.html';
+    }
+}
+
+// Attach download button event listener
+function attachDownloadButtonListener() {
+    const downloadBtn = document.getElementById('downloadReportBtn');
+    console.log('Looking for download button:', downloadBtn);
+    
+    if (downloadBtn && !downloadBtn.hasAttribute('data-listener-attached')) {
+        console.log('Attaching download button event listener');
+        downloadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Download button clicked via attachDownloadButtonListener');
+            downloadMonthlyReport();
+        });
+        downloadBtn.setAttribute('data-listener-attached', 'true');
+    } else if (downloadBtn) {
+        console.log('Download button already has listener attached');
+    } else {
+        console.log('Download button not found');
+    }
+}
+
+// Download monthly report functionality
+async function downloadMonthlyReport() {
+    console.log('downloadMonthlyReport function called');
+    
+    if (!checkAuth()) {
+        console.log('Authentication failed');
+        return;
+    }
+    
+    try {
+        // Get selected month and year from dropdowns
+        const monthSelect = document.getElementById('reportMonth');
+        const yearSelect = document.getElementById('reportYear');
+        
+        console.log('Month select element:', monthSelect);
+        console.log('Year select element:', yearSelect);
+        
+        if (!monthSelect || !yearSelect) {
+            console.error('Month or year select elements not found');
+            alert('Report selectors not found. Please refresh the page.');
+            return;
+        }
+        
+        const month = parseInt(monthSelect.value);
+        const year = parseInt(yearSelect.value);
+        
+        console.log('Selected month:', month, 'year:', year);
+        
+        // Show loading state
+        const downloadBtn = document.getElementById('downloadReportBtn');
+        const originalContent = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        downloadBtn.disabled = true;
+        
+        // Make API call to download PDF
+        const apiUrl = `/api/monthly-report?month=${month}&year=${year}`;
+        console.log('Making API call to:', apiUrl);
+        
+        const response = await fetchWithAuth(apiUrl);
+        console.log('API response status:', response.status);
+        
+        if (response.ok) {
+            // Get the PDF blob
+            const blob = await response.blob();
+            
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `monthly_report_${year}_${month.toString().padStart(2, '0')}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Cleanup
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // Show success message
+            alert('Monthly report downloaded successfully!');
+        } else {
+            const errorData = await response.json();
+            alert('Error downloading report: ' + (errorData.detail || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error downloading report:', error);
+        alert('Error downloading report. Please try again.');
+    } finally {
+        // Reset button state
+        const downloadBtn = document.getElementById('downloadReportBtn');
+        if (downloadBtn) {
+            downloadBtn.innerHTML = '<i class="fas fa-file-pdf"></i>';
+            downloadBtn.disabled = false;
+        }
+    }
 }
 
 // Make functions globally accessible for HTML tab switching
 window.loadSources = loadSources;
 window.loadTransactions = loadTransactions;
-window.currentMonth = currentMonth; 
+window.currentMonth = currentMonth;
+window.editTransaction = editTransaction;
+window.deleteTransaction = deleteTransaction;
+window.logout = logout;
+window.downloadMonthlyReport = downloadMonthlyReport;
+window.attachDownloadButtonListener = attachDownloadButtonListener; 

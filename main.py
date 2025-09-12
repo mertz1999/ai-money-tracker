@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
-from routers import transactions, categories, sources, users
+from routers import transactions, categories, sources, users, reports
 from modules.database import Database
 from modules.currency_exchange import CurrencyExchange
 from modules.transaction_parser import TransactionParser
@@ -31,6 +31,7 @@ app.include_router(users.router, tags=["users"])
 app.include_router(transactions.router, tags=["transactions"])
 app.include_router(categories.router, tags=["categories"])
 app.include_router(sources.router, tags=["sources"])
+app.include_router(reports.router, prefix="/api", tags=["reports"])
 
 # Serve static files
 from fastapi.staticfiles import StaticFiles

@@ -275,6 +275,17 @@ class Database:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM sources WHERE user_id = ?", (user_id,))
             return cursor.fetchall()
+    
+    def get_sources(self, user_id):
+        """Get all sources for a user as dictionaries"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM sources WHERE user_id = ?", (user_id,))
+            
+            # Convert tuples to dictionaries
+            columns = [description[0] for description in cursor.description]
+            rows = cursor.fetchall()
+            return [dict(zip(columns, row)) for row in rows]
 
     def get_all_transactions(self, user_id, month=None):
         """Get all transactions for a user, optionally filtered by month"""
@@ -298,6 +309,31 @@ class Database:
                 )
             
             return cursor.fetchall()
+    
+    def get_transactions_by_month(self, user_id, month, year):
+        """Get all transactions for a user for a specific month and year"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            start_date = f"{year}-{month:02d}-01"
+            if month == 12:
+                end_date = f"{year + 1}-01-01"
+            else:
+                end_date = f"{year}-{month + 1:02d}-01"
+            
+            cursor.execute("""
+                SELECT t.*, c.name as category, s.name as source
+                FROM transactions t
+                LEFT JOIN categories c ON t.category_id = c.id
+                LEFT JOIN sources s ON t.source_id = s.id
+                WHERE t.user_id = ? AND t.date >= ? AND t.date < ?
+                ORDER BY t.date DESC
+            """, (user_id, start_date, end_date))
+            
+            # Convert tuples to dictionaries
+            columns = [description[0] for description in cursor.description]
+            rows = cursor.fetchall()
+            return [dict(zip(columns, row)) for row in rows]
     
     def get_source_by_id(self, source_id):
         """Get source by ID"""

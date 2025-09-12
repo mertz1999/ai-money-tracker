@@ -1066,6 +1066,37 @@ body {
     outline-offset: 2px;
 }
 
+/* Logout button specific styling */
+.action-btn.btn-outline-danger {
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+    background: transparent;
+}
+
+.action-btn.btn-outline-danger:hover {
+    background: var(--danger-color);
+    color: white;
+    border-color: var(--danger-color);
+}
+
+/* Download report button styling */
+.btn-outline-success {
+    color: var(--success-color);
+    border-color: var(--success-color);
+    background: transparent;
+}
+
+.btn-outline-success:hover {
+    background: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+
+.btn-outline-success:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Mobile-specific components */
 .summary-cards-grid {
     display: grid;

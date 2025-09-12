@@ -3,17 +3,20 @@ version: '3.8'
 services:
   backend:
     build: .
+    # This service can still be reached on port 9000 directly from the host.
+    # The conflicting "8080:8080" mapping is removed. Your app still runs on 8080 INSIDE the container.
     ports:
       - "9000:9000"
-      - "8080:8080"
     volumes:
       - ./money_tracker.db:/app/money_tracker.db
     env_file:
       - .env
     labels:
-      # Traefik settings to route traffic to the backend service
+      # --- Traefik Labels ---
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`money.ensa-ai.com`)"  # Replace with your domain
+      # ⭐️ IMPORTANT: This new label tells Traefik to send traffic to this container's internal port 8080.
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+      - "traefik.http.routers.backend.rule=Host(`money.ensa-ai.com`)"
       - "traefik.http.routers.backend.entrypoints=websecure"
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
     restart: unless-stopped
@@ -21,22 +24,27 @@ services:
   traefik:
     image: traefik:v2.5
     container_name: traefik
+    # ✅ FIXED: Combined the two 'command' blocks into a single, valid command.
     command:
-      # Traefik settings
-      - "--api.insecure=true"                    # Enable API dashboard for debugging (disable in production)
-      - "--providers.docker=true"                # Enable Docker provider
-      - "--entryPoints.web.address=:80"          # HTTP entry point
-      - "--entryPoints.websecure.address=:443"   # HTTPS entry point
-      - "--certificatesResolvers.myresolver.acme.tlsChallenge=true"  # TLS challenge for Let's Encrypt
-      - "--certificatesResolvers.myresolver.acme.email=your-email@example.com"  # Replace with your email
-      - "--certificatesResolvers.myresolver.acme.storage=/acme.json"  # Where certificates will be stored
+      - /bin/sh
+      - -c
+      - |
+        touch /acme.json
+        chmod 600 /acme.json
+        traefik \
+          --api.insecure=true \
+          --providers.docker=true \
+          --entryPoints.web.address=:80 \
+          --entryPoints.websecure.address=:443 \
+          --certificatesResolvers.myresolver.acme.tlsChallenge=true \
+          --certificatesResolvers.myresolver.acme.email=your-email@example.com \
+          --certificatesResolvers.myresolver.acme.storage=/acme.json
     ports:
-      - "80:80"   # HTTP traffic for Let's Encrypt
-      - "443:443" # HTTPS traffic for your domain
-      - "8080:8080"  # Traefik dashboard (optional, disable in production)
+      - "80:80"   # For web traffic and Let's Encrypt
+      - "443:443" # For secure web traffic
+      # This port is for the Traefik dashboard. Since the conflict is resolved, it can stay on 8080.
+      - "8080:8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"   # Allows Traefik to discover Docker containers
-      - "./acme.json:/acme.json"                       # Store SSL certificates
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./acme.json:/acme.json"
     restart: unless-stopped
-    # Make sure acme.json has the correct permissions
-    command: /bin/sh -c "touch /acme.json && chmod 600 /acme.json && traefik"

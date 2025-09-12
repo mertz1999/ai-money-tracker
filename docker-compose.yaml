@@ -37,7 +37,7 @@ services:
           --entryPoints.web.address=:80 \
           --entryPoints.websecure.address=:443 \
           --certificatesResolvers.myresolver.acme.tlsChallenge=true \
-          --certificatesResolvers.myresolver.acme.email=your-email@example.com \
+          --certificatesResolvers.myresolver.acme.email=reza.tz780210@gmail.com \
           --certificatesResolvers.myresolver.acme.storage=/acme.json
     ports:
       - "80:80"   # For web traffic and Let's Encrypt

@@ -231,12 +231,18 @@ function parseTransactionDescription() {
         body: JSON.stringify({ text: description })
     })
     .then(response => {
-        if (!response.ok) {
-            throw new Error('Failed to parse transaction');
+        console.log('Parse response status:', response.status);
+        if (response.status !== 200) {
+            // Try to get error details
+            return response.text().then(text => {
+                console.error('Parse error response:', text);
+                throw new Error(`Failed to parse transaction: ${response.status} - ${text}`);
+            });
         }
         return response.json();
     })
     .then(data => {
+        console.log('Parse response data:', data);
         // Fill form with parsed data
         document.getElementById('transactionName').value = data.name;
         document.getElementById('transactionDate').value = data.date;
@@ -279,7 +285,10 @@ function parseTransactionDescription() {
         }
         
         // Show the parsed details
-        document.getElementById('parsedTransactionDetails').style.display = 'block';
+        const parsedDetails = document.getElementById('parsedTransactionDetails');
+        if (parsedDetails) {
+            parsedDetails.style.display = 'block';
+        }
     })
     .catch(error => {
         console.error('Error parsing transaction:', error);

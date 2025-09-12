@@ -3,7 +3,7 @@ from fastapi.responses import Response
 from typing import List, Dict, Any
 from datetime import datetime, date
 from modules.database import Database
-from routers.users import get_current_user
+from routers.users import get_current_user  
 from modules.currency_exchange import CurrencyExchange
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
@@ -13,7 +13,7 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 import io
 
-# Create router
+# Create router 
 router = APIRouter()
 
 # Get currency exchange instance

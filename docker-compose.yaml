@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "9000:9000"
+      - "8080:8080"
+    volumes:
+      - ./money_tracker.db:/app/money_tracker.db
+    env_file:
+      - .env

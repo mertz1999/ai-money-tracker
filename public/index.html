@@ -2,65 +2,212 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Money Tracker Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AI Money Tracker</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="AI Money Tracker">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Money Tracker">
+    <meta name="description" content="AI-powered personal finance tracker with multi-currency support">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    <meta name="msapplication-TileColor" content="#4e73df">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="theme-color" content="#4e73df">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/img/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/img/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/img/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/img/icon-192x192.png">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/img/icon-16x16.png">
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Include Sidebar -->
-    <div id="sidebar-container"></div>
+    <!-- PWA App Container -->
+    <div class="pwa-app">
+        <!-- Top App Bar -->
+        <header class="app-header">
+            <div class="app-header-content">
+                <div class="header-left">
+                    <h1 class="app-title">Money Tracker</h1>
+                </div>
+                <div class="header-right">
+                    <button class="action-btn" id="refreshExchangeBtn" title="Refresh Exchange Rate">
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                    <button class="action-btn btn-outline-danger" id="logoutBtn" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Include Top Navigation -->
-        <div id="topnav-container"></div>
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Dashboard View -->
+            <div class="view-container" id="dashboard-view">
+                <!-- Summary Cards -->
+                <div class="summary-section">
+                    <div id="summary-cards-container"></div>
+                </div>
 
-        <!-- Dashboard Content -->
-        <div class="container-fluid dashboard-content">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <h1 class="page-title">Dashboard</h1>
-                    <p class="text-muted">Welcome to your financial overview</p>
+                        <!-- Quick Actions -->
+                        <div class="quick-actions">
+                            <button class="quick-action-btn primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Transaction</span>
+                            </button>
+                            <button class="quick-action-btn secondary" data-bs-toggle="modal" data-bs-target="#addSourceModal">
+                                <i class="fas fa-wallet"></i>
+                                <span>Add Source</span>
+                            </button>
+                        </div>
+
+                <!-- Content Tabs -->
+                <div class="content-tabs">
+                    <button class="tab-btn active" data-tab="sources">
+                        <i class="fas fa-credit-card"></i>
+                        <span>Sources</span>
+                    </button>
+                    <button class="tab-btn" data-tab="transactions">
+                        <i class="fas fa-list"></i>
+                        <span>Transactions</span>
+                    </button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <div class="tab-pane active" id="sources-tab">
+                        <div id="sources-table-container"></div>
+                    </div>
+                    <div class="tab-pane" id="transactions-tab">
+                        <div class="transactions-header">
+                            <div class="month-selector">
+                                <select id="monthSelector" class="form-select">
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <button class="currency-toggle-btn" id="toggleCurrencyBtn">
+                                <i class="fas fa-exchange-alt"></i>
+                                <span>Show in Toman</span>
+                            </button>
+                        </div>
+                        <div id="transactions-table-container"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Include Summary Cards -->
-            <div id="summary-cards-container"></div>
+        </main>
 
-            <!-- Sources and Recent Transactions -->
-            <div class="row">
-                <div class="col-md-5 mb-3">
-                    <!-- Include Sources Table -->
-                    <div id="sources-table-container"></div>
+
+
+        <!-- Modals Container -->
+        <div id="modals-container"></div>
+
+        <!-- Loading Overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
-                <div class="col-md-7 mb-3">
-                    <!-- Include Transactions Table -->
-                    <div id="transactions-table-container"></div>
+                <p class="loading-text">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Desktop Warning Overlay -->
+        <div class="desktop-warning-overlay" id="desktopWarningOverlay" hidden>
+            <div class="desktop-warning-card">
+                <h2><i class="fas fa-mobile-alt me-2"></i>Best on Mobile / PWA</h2>
+                <p>
+                    AI Money Tracker is designed for a mobile experience. For the best results,
+                    please install it as an app and use it in a mobile-sized window.
+                </p>
+                <div class="desktop-warning-actions">
+                    <button id="desktopInstallBtn" class="btn btn-primary">
+                        <i class="fas fa-download me-2"></i>Install App
+                    </button>
+                    <button id="desktopContinueBtn" class="btn btn-outline-secondary">
+                        Continue on desktop
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Include Modals -->
-    <div id="modals-container"></div>
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="js/main.js"></script>
     <script>
-        // Load components
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Show install button or banner
+            showInstallPrompt();
+        });
+
+        function showInstallPrompt() {
+            // You can add an install button to your UI here
+            console.log('PWA install prompt available');
+        }
+
+        // Load components and initialize PWA app
         document.addEventListener('DOMContentLoaded', function() {
+            setupDesktopWarningOverlay();
+            // Check authentication first
+            if (!checkAuth()) {
+                return;
+            }
+
+            // Show loading overlay
+            showLoadingOverlay();
+
             const components = [
-                { id: 'sidebar-container', file: 'components/sidebar.html' },
-                { id: 'topnav-container', file: 'components/topnav.html' },
                 { id: 'summary-cards-container', file: 'components/summary-cards.html' },
                 { id: 'sources-table-container', file: 'components/sources-table.html' },
                 { id: 'transactions-table-container', file: 'components/transactions-table.html' },
@@ -79,72 +226,302 @@
                         
                         // Check if all components are loaded
                         if (loadedComponents === components.length) {
-                            // Initialize month selector
-                            const monthSelector = document.getElementById('monthSelector');
-                            if (monthSelector) {
-                                const currentMonth = new Date().getMonth() + 1; // 1-12
-                                monthSelector.value = currentMonth;
-                                
-                                monthSelector.addEventListener('change', function() {
-                                    const selectedMonth = parseInt(this.value);
-                                    loadTransactions(selectedMonth);
-                                });
-                            }
-                            
-                            // Initialize currency toggle
-                            const toggleBtn = document.getElementById('toggleCurrencyBtn');
-                            if (toggleBtn) {
-                                toggleBtn.addEventListener('click', function() {
-                                    toggleTransactionCurrency();
-                                });
-                            }
-
-                            // Initialize parse transaction button
-                            const parseTransactionBtn = document.getElementById('parseTransactionBtn');
-                            if (parseTransactionBtn) {
-                                parseTransactionBtn.addEventListener('click', parseTransactionDescription);
-                            }
-
-                            // Initialize save transaction button
-                            const saveTransactionBtn = document.getElementById('saveTransactionBtn');
-                            if (saveTransactionBtn) {
-                                saveTransactionBtn.addEventListener('click', saveTransaction);
-                            }
-
-                            // Initialize save source button
-                            const saveSourceBtn = document.getElementById('saveSourceBtn');
-                            if (saveSourceBtn) {
-                                saveSourceBtn.addEventListener('click', saveSource);
-                            }
-                            
-                            // Load initial data
-                            loadCategories();
-                            loadSources();
-                            loadTransactions(currentMonth);
-
-                            // Attach logout event
-                            const logoutBtn = document.getElementById('logoutBtn');
-                            if (logoutBtn) {
-                                logoutBtn.addEventListener('click', function(e) {
-                                    e.preventDefault();
-                                    logout();
-                                });
-                            }
+                            initializePWAApp();
                         }
                     })
                     .catch(error => {
                         console.error(`Error loading ${component.file}:`, error);
+                        hideLoadingOverlay();
                     });
             });
         });
 
-        // Check authentication on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            if (!checkAuth()) {
-                return; // checkAuth will redirect to login if not authenticated
+        function initializePWAApp() {
+            console.log('Initializing PWA App...');
+            // Initialize mobile UI components
+            initializeTabSwitching();
+            initializeQuickActions();
+            
+            // Initialize existing functionality
+            initializeExistingFeatures();
+            
+            // Load initial data
+            loadInitialData();
+            
+            // Hide loading overlay
+            hideLoadingOverlay();
+            
+        }
+
+
+        function initializeTabSwitching() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab');
+                    activateMainTab(targetTab);
+                });
+            });
+        }
+
+        // Single source of truth for switching tabs in the main panel
+        function activateMainTab(tabName) {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            
+            // Update active tab button
+            tabBtns.forEach(tb => tb.classList.remove('active'));
+            const targetBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+            
+            // Update active tab pane
+            tabPanes.forEach(tp => tp.classList.remove('active'));
+            const targetPane = document.getElementById(`${tabName}-tab`);
+            if (targetPane) targetPane.classList.add('active');
+
+            // Load data for the selected tab
+            if (tabName === 'sources') {
+                if (typeof window.loadSources === 'function') {
+                    window.loadSources();
+                }
+            } else if (tabName === 'transactions') {
+                if (typeof window.loadTransactions === 'function') {
+                    const month = window.currentMonth || new Date().getMonth() + 1;
+                    window.loadTransactions(month);
+                }
             }
-            // Initialize your app here
-        });
+        }
+
+
+        function initializeQuickActions() {
+            const quickActionBtns = document.querySelectorAll('.quick-action-btn');
+            quickActionBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.getAttribute('data-bs-target');
+                    if (action) {
+                        // Bootstrap modal will handle this
+                        return;
+                    }
+                });
+            });
+
+            // Add event listeners for modal buttons when modals are shown
+            const addTransactionModal = document.getElementById('addTransactionModal');
+            if (addTransactionModal) {
+                addTransactionModal.addEventListener('shown.bs.modal', function() {
+                    // Re-attach event listeners for modal buttons
+                    const parseBtn = document.getElementById('parseTransactionBtn');
+                    const saveBtn = document.getElementById('saveTransactionBtn');
+                    
+                    if (parseBtn) {
+                        // Remove existing listeners and add new ones
+                        parseBtn.replaceWith(parseBtn.cloneNode(true));
+                        document.getElementById('parseTransactionBtn').addEventListener('click', parseTransactionDescription);
+                    }
+                    
+                    if (saveBtn) {
+                        // Remove existing listeners and add new ones
+                        saveBtn.replaceWith(saveBtn.cloneNode(true));
+                        document.getElementById('saveTransactionBtn').addEventListener('click', saveTransaction);
+                        console.log('Save transaction button event listener attached');
+                    }
+                });
+            }
+
+            const addSourceModal = document.getElementById('addSourceModal');
+            if (addSourceModal) {
+                addSourceModal.addEventListener('shown.bs.modal', function() {
+                    const saveBtn = document.getElementById('saveSourceBtn');
+                    if (saveBtn) {
+                        // Remove existing listeners and add new ones
+                        saveBtn.replaceWith(saveBtn.cloneNode(true));
+                        document.getElementById('saveSourceBtn').addEventListener('click', saveSource);
+                    }
+                });
+            }
+        }
+
+
+        function initializeExistingFeatures() {
+            // Month selector
+            const monthSelector = document.getElementById('monthSelector');
+            if (monthSelector) {
+                // Use the global currentMonth variable
+                monthSelector.value = currentMonth;
+                
+                monthSelector.addEventListener('change', function() {
+                    const selectedMonth = parseInt(this.value);
+                    currentMonth = selectedMonth; // Update global currentMonth
+                    loadTransactions(selectedMonth);
+                });
+            }
+            
+            // Currency toggle
+            const toggleBtn = document.getElementById('toggleCurrencyBtn');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    toggleTransactionCurrency();
+                });
+            }
+
+            // Exchange rate refresh
+            const refreshBtn = document.getElementById('refreshExchangeBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    fetchExchangeRate(true);
+                });
+            }
+
+            // Logout
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logout();
+                });
+            }
+
+            // Parse transaction button
+            const parseTransactionBtn = document.getElementById('parseTransactionBtn');
+            if (parseTransactionBtn) {
+                parseTransactionBtn.addEventListener('click', parseTransactionDescription);
+            }
+
+            // Save transaction button
+            const saveTransactionBtn = document.getElementById('saveTransactionBtn');
+            if (saveTransactionBtn) {
+                saveTransactionBtn.addEventListener('click', saveTransaction);
+                console.log('Initial save transaction button event listener attached');
+            } else {
+                console.log('Save transaction button not found during initialization');
+            }
+
+            // Save source button
+            const saveSourceBtn = document.getElementById('saveSourceBtn');
+            if (saveSourceBtn) {
+                saveSourceBtn.addEventListener('click', saveSource);
+            }
+        }
+
+        function loadInitialData() {
+            const currentMonth = new Date().getMonth() + 1;
+            loadCategories();
+            loadSources();
+            loadTransactions(currentMonth);
+            fetchExchangeRate();
+        }
+
+        function switchView(viewName) {
+            // Always show the main dashboard container
+            const views = document.querySelectorAll('.view-container');
+            views.forEach(view => view.classList.add('d-none'));
+            document.getElementById('dashboard-view').classList.remove('d-none');
+
+            if (viewName === 'transactions') {
+                // Activate the Transactions tab inside the dashboard
+                const tabBtns = document.querySelectorAll('.tab-btn');
+                const tabPanes = document.querySelectorAll('.tab-pane');
+                tabBtns.forEach(tb => tb.classList.remove('active'));
+                tabPanes.forEach(tp => tp.classList.remove('active'));
+
+                const transactionsTabBtn = document.querySelector('.tab-btn[data-tab="transactions"]');
+                const transactionsTabPane = document.getElementById('transactions-tab');
+                if (transactionsTabBtn) transactionsTabBtn.classList.add('active');
+                if (transactionsTabPane) transactionsTabPane.classList.add('active');
+
+                // Ensure transactions are loaded
+                if (typeof window.loadTransactions === 'function') {
+                    const month = window.currentMonth || new Date().getMonth() + 1;
+                    window.loadTransactions(month);
+                }
+            } else if (viewName === 'dashboard') {
+                // Default to the Sources tab when returning to dashboard
+                const sourcesTabBtn = document.querySelector('.tab-btn[data-tab="sources"]');
+                const sourcesTabPane = document.getElementById('sources-tab');
+                if (sourcesTabBtn && sourcesTabPane) {
+                    document.querySelectorAll('.tab-btn').forEach(tb => tb.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(tp => tp.classList.remove('active'));
+                    sourcesTabBtn.classList.add('active');
+                    sourcesTabPane.classList.add('active');
+                }
+            }
+        }
+
+        function handleQuickAction(action) {
+            switch (action) {
+                case 'add-transaction':
+                    const addTransactionModal = new bootstrap.Modal(document.getElementById('addTransactionModal'));
+                    addTransactionModal.show();
+                    break;
+                case 'add-source':
+                    const addSourceModal = new bootstrap.Modal(document.getElementById('addSourceModal'));
+                    addSourceModal.show();
+                    break;
+                case 'profile':
+                    // Handle profile action
+                    console.log('Profile action');
+                    break;
+            }
+        }
+
+        function showLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+
+        // Desktop warning overlay logic
+        function setupDesktopWarningOverlay() {
+            const overlay = document.getElementById('desktopWarningOverlay');
+            const installBtn = document.getElementById('desktopInstallBtn');
+            const continueBtn = document.getElementById('desktopContinueBtn');
+
+            function shouldShow() {
+                // Consider >= 1024px as desktop size
+                const isDesktop = window.innerWidth >= 1024;
+                const dismissed = sessionStorage.getItem('dismissDesktopWarning') === '1';
+                return isDesktop && !dismissed;
+            }
+
+            function update() {
+                if (!overlay) return;
+                if (shouldShow()) {
+                    overlay.removeAttribute('hidden');
+                } else {
+                    overlay.setAttribute('hidden', '');
+                }
+            }
+
+            window.addEventListener('resize', update);
+            update();
+
+            if (continueBtn) {
+                continueBtn.addEventListener('click', () => {
+                    sessionStorage.setItem('dismissDesktopWarning', '1');
+                    update();
+                });
+            }
+
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        try { await deferredPrompt.userChoice; } catch (e) { /* no-op */ }
+                        deferredPrompt = null;
+                    } else {
+                        alert('Use your browser\'s menu to install this app.');
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html> 

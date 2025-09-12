@@ -57,6 +57,16 @@ class ExchangeRateResponse(BaseModel):
     rate: float
     timestamp: str
 
+class TransactionUpdate(BaseModel):
+    name: str
+    date: str
+    price: float
+    is_usd: bool
+    category_id: int
+    source_id: int
+    your_currency_rate: float
+    is_deposit: bool
+
 # Create dependency functions that will be injected at runtime
 def get_db():
     return Database()
@@ -219,7 +229,7 @@ async def add_income(
             user_id=current_user[0],
             name=income.name,
             date=income.date,
-            price_in_dollar=-price_in_dollar,  # Negative for income
+            price_in_dollar=price_in_dollar,  # Negative for income
             your_currency_rate=usd_rate,
             category_id=category_id,
             source_id=source_id,
@@ -274,4 +284,52 @@ def get_exchange_rate(live: bool = False, exchange=Depends(get_exchange_dependen
             "timestamp": datetime.now().isoformat() 
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/api/transactions/{transaction_id}", response_model=Transaction)
+async def update_transaction(
+    transaction_id: int,
+    update: TransactionUpdate = Body(...),
+    current_user = Depends(get_current_user),
+    db: Database = Depends(get_db)
+):
+    # Check if transaction exists and belongs to user
+    transaction = db.get_transaction_by_id(transaction_id)
+    if not transaction or transaction[8] != current_user[0]:  # assuming user_id is at index 8
+        raise HTTPException(status_code=404, detail="Transaction not found or not owned by user")
+
+    # Convert to USD if needed
+    if update.is_usd:
+        price_in_dollar = update.price
+    else:
+        price_in_dollar = update.price / update.your_currency_rate if update.your_currency_rate else update.price
+
+    updated = db.update_transaction(
+        transaction_id=transaction_id,
+        name=update.name,
+        date=update.date,
+        price=price_in_dollar,
+        is_usd=None,  # not used in DB
+        category_id=update.category_id,
+        source_id=update.source_id,
+        your_currency_rate=update.your_currency_rate,
+        is_deposit=update.is_deposit
+    )
+    if not updated:
+        raise HTTPException(status_code=500, detail="Failed to update transaction")
+    transaction_data = db.get_transaction_by_id(transaction_id)
+    categories = {cat[0]: cat[1] for cat in db.get_all_categories()}
+    sources = {src[0]: src[1] for src in db.get_all_sources(current_user[0])}
+    return {
+        "id": transaction_data[0],
+        "name": transaction_data[1],
+        "date": transaction_data[2],
+        "price": transaction_data[3],
+        "your_currency_rate": transaction_data[4],
+        "is_usd": update.is_usd,  # return what user sent
+        "category_id": transaction_data[5],
+        "source_id": transaction_data[6],
+        "category": categories.get(transaction_data[5], ""),
+        "source": sources.get(transaction_data[6], ""),
+        "is_deposit": bool(transaction_data[7]) if len(transaction_data) > 7 else False
+    } 

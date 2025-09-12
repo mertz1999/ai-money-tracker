@@ -16,3 +16,4 @@ PyJWT
 pydantic[email]
 bcrypt==4.0.1
 python-telegram-bot
+reportlab>=4.0.0

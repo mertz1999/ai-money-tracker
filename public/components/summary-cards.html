@@ -1,79 +1,58 @@
-<!-- Summary Cards Component -->
-<div class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card summary-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Total Balance</h6>
-                        <h3 class="card-title mb-0" id="totalBalance">$5,240.50</h3>
-                        <p class="text-success mb-0"><i class="fas fa-arrow-up"></i> 3.5%</p>
-                    </div>
-                    <div class="card-icon bg-primary">
-                        <i class="fas fa-wallet"></i>
-                    </div>
-                </div>
+<!-- Summary Cards Component - Mobile PWA Design -->
+<div class="summary-cards-grid">
+    <!-- Total Balance Card -->
+    <div class="summary-card">
+        <div class="summary-card-header">
+            <h6 class="summary-card-title">Total Balance</h6>
+            <div class="summary-card-icon bg-primary">
+                <i class="fas fa-wallet"></i>
             </div>
         </div>
+        <h3 class="summary-card-value" id="totalBalance">$5,240.50</h3>
+        <p class="text-success mb-0">
+            <i class="fas fa-arrow-up"></i> 3.5% from last month
+        </p>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card summary-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Income</h6>
-                        <h3 class="card-title mb-0" id="totalIncome">$1,950.00</h3>
-                        <p class="text-success mb-0"><i class="fas fa-arrow-up"></i> 5.2%</p>
-                    </div>
-                    <div class="card-icon bg-success">
-                        <i class="fas fa-arrow-down"></i>
-                    </div>
-                </div>
+
+    <!-- Income Card -->
+    <div class="summary-card">
+        <div class="summary-card-header">
+            <h6 class="summary-card-title">This Month Income</h6>
+            <div class="summary-card-icon bg-success">
+                <i class="fas fa-arrow-down"></i>
             </div>
         </div>
+        <h3 class="summary-card-value" id="totalIncome">$1,950.00</h3>
+        <p class="text-success mb-0">
+            <i class="fas fa-arrow-up"></i> 5.2% from last month
+        </p>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card summary-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Expenses</h6>
-                        <h3 class="card-title mb-0" id="totalExpense">$1,150.25</h3>
-                        <p class="text-danger mb-0"><i class="fas fa-arrow-up"></i> 2.8%</p>
-                    </div>
-                    <div class="card-icon bg-danger">
-                        <i class="fas fa-arrow-up"></i>
-                    </div>
-                </div>
+
+    <!-- Expenses Card -->
+    <div class="summary-card">
+        <div class="summary-card-header">
+            <h6 class="summary-card-title">This Month Expenses</h6>
+            <div class="summary-card-icon bg-danger">
+                <i class="fas fa-arrow-up"></i>
             </div>
         </div>
+        <h3 class="summary-card-value" id="totalExpense">$1,150.25</h3>
+        <p class="text-danger mb-0">
+            <i class="fas fa-arrow-up"></i> 2.8% from last month
+        </p>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card summary-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-subtitle mb-2 text-muted">Exchange Rate</h6>
-                        <h3 class="card-title mb-0" id="summaryExchangeRate">52,000</h3>
-                        <p class="text-muted mb-0 d-flex align-items-center">
-                            USD to Toman
-                            <button class="btn btn-sm btn-outline-info ms-2 d-flex align-items-center justify-content-center" 
-                                    id="refreshExchangeBtn" 
-                                    onclick="fetchExchangeRate(true)" 
-                                    title="Refresh rate"
-                                    style="width: 32px; height: 32px;">
-                                <i class="fas fa-sync-alt"></i>
-                                <div class="spinner-border spinner-border-sm position-absolute d-none" role="status">
-                                    <span class="visually-hidden">Loading...</span>
-                                </div>
-                            </button>
-                        </p>
-                    </div>
-                    <div class="card-icon bg-info">
-                        <i class="fas fa-exchange-alt"></i>
-                    </div>
-                </div>
+
+    <!-- Exchange Rate Card -->
+    <div class="summary-card">
+        <div class="summary-card-header">
+            <h6 class="summary-card-title">Exchange Rate</h6>
+            <div class="summary-card-icon bg-info">
+                <i class="fas fa-exchange-alt"></i>
             </div>
         </div>
+        <h3 class="summary-card-value" id="summaryExchangeRate">52,000</h3>
+        <p class="text-muted mb-0">
+            USD to Toman
+        </p>
     </div>
 </div> 

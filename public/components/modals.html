@@ -1,67 +1,281 @@
-<!-- Add Transaction Modal -->
+<!-- Add Transaction Modal - Mobile PWA Design -->
 <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="addTransactionModalLabel">Add Transaction</h5>
+                <h5 class="modal-title" id="addTransactionModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Add Transaction
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="addTransactionForm">
-                    <div class="mb-3">
-                        <label for="transactionDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="transactionDescription" rows="3" placeholder="Describe your transaction (e.g., 'I spent $50 on groceries at Walmart')"></textarea>
-                        <small class="form-text text-muted">Our AI will parse this description automatically.</small>
+                    <!-- AI Description Input -->
+                    <div class="ai-input-section mb-4">
+                        <label for="transactionDescription" class="form-label">
+                            <i class="fas fa-robot me-1"></i>
+                            Describe your transaction
+                        </label>
+                        <textarea class="form-control" id="transactionDescription" rows="3" 
+                                  placeholder="e.g., 'I spent $50 on groceries at Walmart' or 'Received $2000 salary'"></textarea>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-magic me-1"></i>
+                            Our AI will automatically extract the details
+                        </small>
+                        <div class="mt-2">
+                            <button type="button" class="btn btn-outline-primary w-100" id="parseTransactionBtn">
+                                <span class="button-text">
+                                    <i class="fas fa-magic me-2"></i>
+                                    Parse with AI
+                                </span>
+                                <div class="spinner-border spinner-border-sm d-none" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <button type="button" class="btn btn-secondary d-flex align-items-center justify-content-center gap-2" id="parseTransactionBtn" style="min-width: 140px;">
-                            <span class="button-text">Parse Description</span>
-                            <div class="spinner-border spinner-border-sm d-none" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </button>
-                    </div>
-                    <!-- Always show the transaction fields, parsed details just fills them -->
-                    <div id="parsedTransactionDetails" style="display: none;"></div>
+
+                    <!-- Transaction Fields -->
                     <div id="transactionFields">
-                        <div class="mb-3">
-                            <label for="transactionType" class="form-label">Transaction Type</label>
-                            <select class="form-select" id="transactionType">
-                                <option value="expense" data-icon="fas fa-minus-circle" class="text-danger">Expense</option>
-                                <option value="income" data-icon="fas fa-plus-circle" class="text-success">Income</option>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="transactionType" class="form-label">Transaction Type</label>
+                                <select class="form-select form-select-lg" id="transactionType">
+                                    <option value="expense">
+                                        <i class="fas fa-minus-circle me-2"></i>Expense
+                                    </option>
+                                    <option value="income">
+                                        <i class="fas fa-plus-circle me-2"></i>Income
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="transactionName" class="form-label">Transaction Name</label>
+                                <input type="text" class="form-control form-control-lg" id="transactionName" 
+                                       placeholder="Enter transaction name">
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <label for="transactionDate" class="form-label">Date</label>
+                                <input type="date" class="form-control form-control-lg" id="transactionDate">
+                            </div>
+                            <div class="col-6 mb-3">
+                                <label for="transactionCurrency" class="form-label">Currency</label>
+                                <select class="form-select form-select-lg" id="transactionCurrency">
+                                    <option value="true">USD ($)</option>
+                                    <option value="false">Toman (T)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="transactionAmount" class="form-label">Amount</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text" id="amountCurrency">$</span>
+                                    <input type="number" class="form-control" id="transactionAmount" 
+                                           step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="transactionCategory" class="form-label">Category</label>
+                                <select class="form-select form-select-lg" id="transactionCategory">
+                                    <!-- Categories will be loaded dynamically -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <label for="transactionSource" class="form-label">Source</label>
+                                <select class="form-select form-select-lg" id="transactionSource">
+                                    <!-- Sources will be loaded dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveTransactionBtn">
+                    <i class="fas fa-save me-1"></i>
+                    Save Transaction
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Source Modal - Mobile PWA Design -->
+<div class="modal fade" id="addSourceModal" tabindex="-1" aria-labelledby="addSourceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSourceModalLabel">
+                    <i class="fas fa-wallet me-2"></i>
+                    Add Source
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSourceForm">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="sourceName" class="form-label">Source Name</label>
+                            <input type="text" class="form-control form-control-lg" id="sourceName" 
+                                   placeholder="e.g., Bank Account, Cash, Credit Card">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label for="sourceType" class="form-label">Type</label>
+                            <select class="form-select form-select-lg" id="sourceType">
+                                <option value="true">
+                                    <i class="fas fa-university me-2"></i>Bank
+                                </option>
+                                <option value="false">
+                                    <i class="fas fa-wallet me-2"></i>Cash
+                                </option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="transactionName" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="transactionName">
+                        <div class="col-6 mb-3">
+                            <label for="sourceCurrency" class="form-label">Currency</label>
+                            <select class="form-select form-select-lg" id="sourceCurrency">
+                                <option value="true">USD ($)</option>
+                                <option value="false">Toman (T)</option>
+                            </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="transactionDate" class="form-label">Date</label>
-                            <input type="date" class="form-control" id="transactionDate">
-                        </div>
-                        <div class="mb-3">
-                            <label for="transactionAmount" class="form-label">Amount</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="transactionAmount" step="0.01">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="sourceValue" class="form-label">Initial Balance</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text" id="sourceValueCurrency">$</span>
+                                <input type="number" class="form-control" id="sourceValue" 
+                                       step="0.01" value="0" placeholder="0.00">
                             </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Enter the current balance in this source
+                            </small>
                         </div>
-                        <div class="mb-3">
-                            <label for="transactionCurrency" class="form-label">Currency</label>
-                            <select class="form-select" id="transactionCurrency">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveSourceBtn">
+                    <i class="fas fa-save me-1"></i>
+                    Save Source
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Transaction Modal -->
+<div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTransactionModalLabel">
+                    <i class="fas fa-edit me-2"></i>
+                    Edit Transaction
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTransactionForm">
+                    <div class="row g-3">
+                        <!-- Transaction Type -->
+                        <div class="col-12">
+                            <label for="editTransactionType" class="form-label">
+                                <i class="fas fa-exchange-alt me-1"></i>
+                                Transaction Type
+                            </label>
+                            <select class="form-select form-select-lg" id="editTransactionType" required>
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+
+                        <!-- Transaction Name -->
+                        <div class="col-12">
+                            <label for="editTransactionName" class="form-label">
+                                <i class="fas fa-tag me-1"></i>
+                                Transaction Name
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="editTransactionName" 
+                                   placeholder="Enter transaction name" required>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="col-12">
+                            <label for="editTransactionDate" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>
+                                Date
+                            </label>
+                            <input type="date" class="form-control form-control-lg" id="editTransactionDate" required>
+                        </div>
+
+                        <!-- Currency and Amount -->
+                        <div class="col-6">
+                            <label for="editTransactionCurrency" class="form-label">
+                                <i class="fas fa-coins me-1"></i>
+                                Currency
+                            </label>
+                            <select class="form-select form-select-lg" id="editTransactionCurrency" required>
                                 <option value="true">USD</option>
                                 <option value="false">Toman</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="transactionCategory" class="form-label">Category</label>
-                            <select class="form-select" id="transactionCategory">
+                        <div class="col-6">
+                            <label for="editTransactionAmount" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i>
+                                Amount
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="editTransactionAmount" 
+                                       placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <!-- Category -->
+                        <div class="col-12">
+                            <label for="editTransactionCategory" class="form-label">
+                                <i class="fas fa-folder me-1"></i>
+                                Category
+                            </label>
+                            <select class="form-select form-select-lg" id="editTransactionCategory" required>
                                 <!-- Categories will be loaded dynamically -->
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="transactionSource" class="form-label">Source</label>
-                            <select class="form-select" id="transactionSource">
+
+                        <!-- Source -->
+                        <div class="col-12">
+                            <label for="editTransactionSource" class="form-label">
+                                <i class="fas fa-wallet me-1"></i>
+                                Source
+                            </label>
+                            <select class="form-select form-select-lg" id="editTransactionSource" required>
                                 <!-- Sources will be loaded dynamically -->
                             </select>
                         </div>
@@ -69,53 +283,14 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveTransactionBtn">Save Transaction</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Add Source Modal -->
-<div class="modal fade" id="addSourceModal" tabindex="-1" aria-labelledby="addSourceModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addSourceModalLabel">Add Source</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addSourceForm">
-                    <div class="mb-3">
-                        <label for="sourceName" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="sourceName" placeholder="e.g., Bank Account, Cash">
-                    </div>
-                    <div class="mb-3">
-                        <label for="sourceType" class="form-label">Type</label>
-                        <select class="form-select" id="sourceType">
-                            <option value="true">Bank</option>
-                            <option value="false">Cash</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="sourceCurrency" class="form-label">Currency</label>
-                        <select class="form-select" id="sourceCurrency">
-                            <option value="true">USD</option>
-                            <option value="false">Toman</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="sourceValue" class="form-label">Initial Balance</label>
-                        <div class="input-group">
-                            <span class="input-group-text" id="sourceValueCurrency">$</span>
-                            <input type="number" class="form-control" id="sourceValue" step="0.01" value="0">
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="saveSourceBtn">Save Source</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveEditedTransactionBtn">
+                    <i class="fas fa-save me-1"></i>
+                    Update Transaction
+                </button>
             </div>
         </div>
     </div>

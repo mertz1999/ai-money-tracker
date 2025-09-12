@@ -17,15 +17,45 @@ window.initTransactionsPanel = function() {
         sources = await res.json();
     }
 
+    // Helper: show toast
+    function showToast(message, type = 'success') {
+        let toast = document.getElementById('custom-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'custom-toast';
+            toast.style.position = 'fixed';
+            toast.style.bottom = '32px';
+            toast.style.right = '32px';
+            toast.style.zIndex = '9999';
+            toast.style.minWidth = '220px';
+            toast.style.padding = '16px 24px';
+            toast.style.borderRadius = '8px';
+            toast.style.background = '#222';
+            toast.style.color = 'white';
+            toast.style.fontWeight = '500';
+            toast.style.boxShadow = '0 4px 24px rgba(0,0,0,0.12)';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 2000);
+    }
+
     function renderTable(transactions) {
         tableBody.innerHTML = '';
         transactions.forEach(tx => {
             const tr = document.createElement('tr');
+            // Set row background based on deposit/expense
+            tr.className = tx.is_deposit ? 'bg-success-subtle' : 'bg-danger-subtle';
             tr.innerHTML = `
                 <td>${tx.id}</td>
                 <td><input type="text" class="form-control form-control-sm" value="${tx.name}"></td>
                 <td><input type="date" class="form-control form-control-sm" value="${tx.date}"></td>
-                <td><input type="number" class="form-control form-control-sm" value="${tx.price}"></td>
+                <td><input type="number" class="form-control form-control-sm" value="${Math.abs(tx.price)}"></td>
                 <td>
                     <select class="form-select form-select-sm">
                         <option value="true" ${tx.is_usd ? 'selected' : ''}>USD</option>
@@ -75,15 +105,18 @@ window.initTransactionsPanel = function() {
                 if (res.ok) {
                     tr.classList.add('table-success');
                     setTimeout(() => tr.classList.remove('table-success'), 1000);
+                    showToast('Saved successfully', 'success');
                 } else {
                     tr.classList.add('table-danger');
                     setTimeout(() => tr.classList.remove('table-danger'), 1000);
+                    showToast('Save failed', 'error');
                 }
             });
         });
     }
 
     async function loadTransactions() {
+        let showLoadingToast = true;
         await fetchCategories();
         await fetchSources();
         let url = '/api/transactions';
@@ -92,6 +125,7 @@ window.initTransactionsPanel = function() {
         const res = await fetchWithAuth(url);
         const transactions = await res.json();
         renderTable(transactions);
+        if (showLoadingToast) showToast('Loaded successfully', 'success');
     }
 
     if (loadBtn) {

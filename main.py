@@ -51,10 +51,10 @@ def get_parser():
     parser = TransactionParser()
     return parser
 
-# Dependency for reports
-def get_reports():
-    reports = Reports()
-    return reports
+# Dependency for reports (commented out since reports module was deleted)
+# def get_reports():
+#     reports = Reports()
+#     return reports
 
 # Health check endpoint
 @app.get("/health")

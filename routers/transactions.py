@@ -229,7 +229,7 @@ async def add_income(
             user_id=current_user[0],
             name=income.name,
             date=income.date,
-            price_in_dollar=-price_in_dollar,  # Negative for income
+            price_in_dollar=price_in_dollar,  # Negative for income
             your_currency_rate=usd_rate,
             category_id=category_id,
             source_id=source_id,
@@ -297,12 +297,19 @@ async def update_transaction(
     transaction = db.get_transaction_by_id(transaction_id)
     if not transaction or transaction[8] != current_user[0]:  # assuming user_id is at index 8
         raise HTTPException(status_code=404, detail="Transaction not found or not owned by user")
+
+    # Convert to USD if needed
+    if update.is_usd:
+        price_in_dollar = update.price
+    else:
+        price_in_dollar = update.price / update.your_currency_rate if update.your_currency_rate else update.price
+
     updated = db.update_transaction(
         transaction_id=transaction_id,
         name=update.name,
         date=update.date,
-        price=update.price,
-        is_usd=update.is_usd,
+        price=price_in_dollar,
+        is_usd=None,  # not used in DB
         category_id=update.category_id,
         source_id=update.source_id,
         your_currency_rate=update.your_currency_rate,
@@ -319,7 +326,7 @@ async def update_transaction(
         "date": transaction_data[2],
         "price": transaction_data[3],
         "your_currency_rate": transaction_data[4],
-        "is_usd": bool(sources.get(transaction_data[6], False)),
+        "is_usd": update.is_usd,  # return what user sent
         "category_id": transaction_data[5],
         "source_id": transaction_data[6],
         "category": categories.get(transaction_data[5], ""),

@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="240" fill="#6366f1" stroke="#4f46e5" stroke-width="8"/>
+  
+  <!-- Money/Wallet Icon -->
+  <g transform="translate(128, 128)">
+    <!-- Wallet base -->
+    <rect x="0" y="80" width="256" height="80" rx="12" fill="#ffffff"/>
+    <rect x="0" y="80" width="256" height="40" rx="12" fill="#f8fafc"/>
+    
+    <!-- Wallet fold -->
+    <path d="M0 80 L128 40 L256 80" fill="#e2e8f0"/>
+    
+    <!-- Money symbol -->
+    <text x="128" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#6366f1">$</text>
+    
+    <!-- AI/Sparkle elements -->
+    <circle cx="200" cy="60" r="4" fill="#fbbf24"/>
+    <circle cx="220" cy="45" r="3" fill="#f59e0b"/>
+    <circle cx="180" cy="35" r="3" fill="#fbbf24"/>
+    <circle cx="240" cy="70" r="2" fill="#f59e0b"/>
+  </g>
+  
+  <!-- AI Circuit pattern -->
+  <g stroke="#ffffff" stroke-width="2" fill="none" opacity="0.3">
+    <path d="M80 120 L120 120 L120 160 L160 160"/>
+    <path d="M200 120 L240 120 L240 80 L280 80"/>
+    <path d="M320 120 L360 120 L360 160 L400 160"/>
+    <circle cx="120" cy="120" r="4" fill="#ffffff"/>
+    <circle cx="240" cy="120" r="4" fill="#ffffff"/>
+    <circle cx="360" cy="120" r="4" fill="#ffffff"/>
+  </g>
+</svg>

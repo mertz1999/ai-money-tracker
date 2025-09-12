@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate PWA Icons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .icon-preview {
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .icon-preview img {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .download-btn {
+            display: block;
+            margin-top: 5px;
+            padding: 5px 10px;
+            background: #6366f1;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .download-btn:hover {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>Click the download buttons to save the icons in different sizes:</p>
+    
+    <div id="iconContainer"></div>
+    
+    <script>
+        const sizes = [16, 32, 72, 96, 128, 144, 152, 192, 384, 512];
+        const container = document.getElementById('iconContainer');
+        
+        sizes.forEach(size => {
+            const div = document.createElement('div');
+            div.className = 'icon-preview';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Create the icon
+            drawIcon(ctx, size);
+            
+            const img = new Image();
+            img.src = canvas.toDataURL('image/png');
+            img.style.width = '64px';
+            img.style.height = '64px';
+            
+            const downloadBtn = document.createElement('a');
+            downloadBtn.href = canvas.toDataURL('image/png');
+            downloadBtn.download = `icon-${size}x${size}.png`;
+            downloadBtn.className = 'download-btn';
+            downloadBtn.textContent = `Download ${size}x${size}`;
+            
+            div.appendChild(img);
+            div.appendChild(document.createElement('br'));
+            div.appendChild(document.createElement('span')).textContent = `${size}x${size}`;
+            div.appendChild(document.createElement('br'));
+            div.appendChild(downloadBtn);
+            
+            container.appendChild(div);
+        });
+        
+        function drawIcon(ctx, size) {
+            const center = size / 2;
+            const radius = size * 0.4;
+            
+            // Background circle
+            ctx.fillStyle = '#6366f1';
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Border
+            ctx.strokeStyle = '#4f46e5';
+            ctx.lineWidth = size * 0.02;
+            ctx.stroke();
+            
+            // Wallet base
+            const walletWidth = size * 0.5;
+            const walletHeight = size * 0.15;
+            const walletX = center - walletWidth / 2;
+            const walletY = center + walletHeight;
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(walletX, walletY, walletWidth, walletHeight);
+            
+            // Wallet fold
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.moveTo(walletX, walletY);
+            ctx.lineTo(center, walletY - walletHeight * 0.5);
+            ctx.lineTo(walletX + walletWidth, walletY);
+            ctx.fill();
+            
+            // Money symbol
+            ctx.fillStyle = '#6366f1';
+            ctx.font = `bold ${size * 0.1}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('$', center, walletY + walletHeight * 0.3);
+            
+            // AI sparkles
+            const sparkleSize = size * 0.02;
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(center + size * 0.15, center - size * 0.1, sparkleSize, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(center + size * 0.25, center - size * 0.2, sparkleSize * 0.8, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    </script>
+</body>
+</html>

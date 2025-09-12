@@ -159,49 +159,37 @@ class Database:
                 conn.commit()
                 
                 if update_balance:
-                    self.update_source_balance(source_id, price_in_dollar, your_currency_rate)
+                    self.update_source_balance(source_id, price_in_dollar, your_currency_rate, is_deposit)
                 
                 return transaction_id
         except sqlite3.IntegrityError:
             return None
     
-    def update_source_balance(self, source_id, price_in_dollar, your_currency_rate):
-        """Update source balance based on transaction amount
-        
-        Args:
-            source_id: ID of the source to update
-            price_in_dollar: Transaction amount in USD
-            your_currency_rate: Exchange rate used for the transaction
-        """
-        # Get source details
+    def update_source_balance(self, source_id, amount_in_dollar, your_currency_rate, is_deposit):
+        """Update source balance based on transaction amount and type (deposit/expense)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT usd, value FROM sources WHERE id = ?", (source_id,))
             source = cursor.fetchone()
-            
             if not source:
                 return False
-            
             is_usd, current_value = source
-            
-            # Calculate the amount to subtract based on currency
             if is_usd:
-                # Source is in USD, so directly subtract price_in_dollar
-                new_value = current_value - price_in_dollar
+                delta = amount_in_dollar if is_deposit else -amount_in_dollar
+                new_value = current_value + delta
             else:
-                # Source is in Toman, so convert price_in_dollar to Toman
-                price_in_toman = price_in_dollar * your_currency_rate
-                new_value = current_value - price_in_toman
-            
-            # Update source value
+                amount_in_toman = amount_in_dollar * your_currency_rate
+                delta = amount_in_toman if is_deposit else -amount_in_toman
+                new_value = current_value + delta
+
+            print(is_usd, current_value, amount_in_dollar, is_deposit)
             cursor.execute(
                 "UPDATE sources SET value = ? WHERE id = ?",
                 (new_value, source_id)
             )
             conn.commit()
-            
             return True
-    
+
     def add_income(self, name, date, amount, is_usd, your_currency_rate, category_id, source_id):
         """Add income to a source
         
@@ -362,14 +350,17 @@ class Database:
             return cursor.fetchone()
 
     def update_transaction(self, transaction_id, name, date, price, is_usd, category_id, source_id, your_currency_rate, is_deposit):
-        """Update a transaction by its ID"""
+        """Update a transaction by its ID and update the source balance as well"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
-            # Check ownership
-            cursor.execute("SELECT user_id FROM transactions WHERE id = ?", (transaction_id,))
-            row = cursor.fetchone()
-            if not row:
+            # Fetch old transaction data
+            cursor.execute("SELECT price_in_dollar, your_currency_rate, source_id, is_deposit FROM transactions WHERE id = ?", (transaction_id,))
+            old_tx = cursor.fetchone()
+            if not old_tx:
                 return False
+            old_price, old_rate, old_source_id, old_is_deposit = old_tx
+            # Revert old effect (invert is_deposit)
+            self.update_source_balance(old_source_id, abs(old_price), old_rate, not old_is_deposit)
             # Update transaction
             cursor.execute(
                 """
@@ -378,4 +369,10 @@ class Database:
                 (name, date, price, your_currency_rate, category_id, source_id, is_deposit, transaction_id)
             )
             conn.commit()
+            # Apply new effect
+            self.update_source_balance(source_id, abs(price), your_currency_rate, is_deposit)
             return cursor.rowcount > 0 
+
+
+
+            

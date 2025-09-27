@@ -41,6 +41,11 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container position-fixed top-0 start-0 p-3" style="z-index: 9999;">
+        <!-- Toasts will be dynamically added here -->
+    </div>
+
     <!-- PWA App Container -->
     <div class="pwa-app">
         <!-- Top App Bar -->
@@ -290,7 +295,7 @@
                         console.log('Sources loaded:', allSources);
                     } catch (error) {
                         console.error('Error loading data for loan payment modal:', error);
-                        alert('Error loading data. Please try again.');
+                        showErrorToast('Error loading data. Please try again.');
                         return;
                     }
                     
@@ -352,19 +357,23 @@
                         paymentDateInput.value = new Date().toISOString().split('T')[0];
                     }
                     
+                    // Add currency change handler
+                    const paymentCurrencySelect = document.getElementById('paymentCurrencySelect');
+                    const paymentCurrency = document.getElementById('paymentCurrency');
+                    if (paymentCurrencySelect && paymentCurrency) {
+                        paymentCurrencySelect.addEventListener('change', function() {
+                            const currency = this.value === 'true' ? '$' : 'T';
+                            paymentCurrency.textContent = currency;
+                        });
+                    }
+                    
                     // Pre-select loan if provided
                     const loanId = addLoanPaymentModal.dataset.loanId;
                     if (loanId && loanSelect) {
                         loanSelect.value = loanId;
                     }
                     
-                    const saveLoanPaymentBtn = document.getElementById('saveLoanPaymentBtn');
-                    if (saveLoanPaymentBtn) {
-                        // Remove previous listeners to avoid duplicates
-                        const newBtn = saveLoanPaymentBtn.cloneNode(true);
-                        saveLoanPaymentBtn.parentNode.replaceChild(newBtn, saveLoanPaymentBtn);
-                        newBtn.addEventListener('click', saveLoanPayment);
-                    }
+                    // Event listener is handled by global event delegation in main.js
                 });
             } else {
                 console.error('addLoanPaymentModal not found!');
@@ -642,7 +651,7 @@
                         try { await deferredPrompt.userChoice; } catch (e) { /* no-op */ }
                         deferredPrompt = null;
                     } else {
-                        alert('Use your browser\'s menu to install this app.');
+                        showInfoToast('Use your browser\'s menu to install this app.');
                     }
                 });
             }

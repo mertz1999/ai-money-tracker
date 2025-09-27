@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from modules.currency_exchange import CurrencyExchange
 
 class Database:
     def __init__(self, db_name="money_tracker.db"):
@@ -9,6 +10,16 @@ class Database:
     def get_connection(self):
         """Get a new connection to the SQLite database"""
         return sqlite3.connect(self.db_name, timeout=20)  # Add timeout parameter
+    
+    def get_exchange_rate(self):
+        """Get the current USD to Toman exchange rate"""
+        try:
+            exchange = CurrencyExchange()
+            rate = exchange.get_usd_rate(live=False)
+            return rate if rate is not None else 50000  # Fallback rate
+        except Exception as e:
+            print(f"Error getting exchange rate: {e}")
+            return 50000  # Fallback rate
 
     def create_tables(self):
         """Create the necessary tables if they don't exist"""
@@ -92,6 +103,7 @@ class Database:
                     payment_date TEXT NOT NULL,
                     source_id INTEGER NOT NULL,
                     is_paid BOOLEAN NOT NULL DEFAULT FALSE,
+                    is_usd BOOLEAN NOT NULL DEFAULT TRUE,
                     user_id INTEGER NOT NULL,
                     created_at TEXT NOT NULL,
                     FOREIGN KEY (loan_id) REFERENCES loans (id),
@@ -217,7 +229,6 @@ class Database:
                 delta = amount_in_toman if is_deposit else -amount_in_toman
                 new_value = current_value + delta
 
-            print(is_usd, current_value, amount_in_dollar, is_deposit)
             cursor.execute(
                 "UPDATE sources SET value = ? WHERE id = ?",
                 (new_value, source_id)
@@ -487,16 +498,16 @@ class Database:
             conn.commit()
             return cursor.rowcount > 0
 
-    def add_loan_payment(self, loan_id, amount, payment_date, source_id, user_id, is_paid=False):
+    def add_loan_payment(self, loan_id, amount, payment_date, source_id, user_id, is_paid=False, is_usd=True):
         """Add a loan payment"""
         try:
             with self.get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute(
                     """INSERT INTO loan_payments 
-                       (loan_id, amount, payment_date, source_id, is_paid, user_id, created_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                    (loan_id, amount, payment_date, source_id, is_paid, user_id, datetime.now().isoformat())
+                       (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, datetime.now().isoformat())
                 )
                 payment_id = cursor.lastrowid
                 conn.commit()

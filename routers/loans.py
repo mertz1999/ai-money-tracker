@@ -35,6 +35,7 @@ class LoanPayment(BaseModel):
     source_id: int
     source_name: str
     is_paid: bool
+    is_usd: bool
     created_at: str
 
 class LoanPaymentCreate(BaseModel):
@@ -42,6 +43,9 @@ class LoanPaymentCreate(BaseModel):
     amount: float = Field(..., gt=0)
     payment_date: str
     source_id: int
+    is_usd: bool = True
+    create_expense_transaction: bool = False
+    loan_name: str = "Loan Payment"
 
 class LoanSummary(BaseModel):
     total_loans: int
@@ -194,6 +198,7 @@ async def get_loan_payments(
             "source_id": payment[4],
             "source_name": payment[8] if len(payment) > 8 else "Unknown",
             "is_paid": bool(payment[5]),
+            "is_usd": bool(payment[6]),
             "created_at": str(payment[7]) if payment[7] is not None else datetime.now().isoformat()
         }
         for payment in payments
@@ -225,12 +230,17 @@ async def create_loan_payment(
         )
     
     try:
+        # Convert amount to USD if needed for loan payment
+        amount_in_usd = payment.amount if payment.is_usd else payment.amount / db.get_exchange_rate()
+        
         payment_id = db.add_loan_payment(
             loan_id=loan_id,
             amount=payment.amount,
             payment_date=payment.payment_date,
             source_id=payment.source_id,
-            user_id=current_user[0]
+            user_id=current_user[0],
+            is_usd=payment.is_usd,
+            is_paid=True  # Always mark as paid immediately
         )
         
         if not payment_id:
@@ -238,6 +248,64 @@ async def create_loan_payment(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create loan payment"
             )
+        
+        # Update loan remaining amount since payment is marked as paid
+        # Get current loan to calculate new remaining amount
+        current_loan = db.get_loan_by_id(loan_id, current_user[0])
+        if current_loan:
+            current_remaining = current_loan[7]  # remaining_amount is at index 7
+            new_remaining_amount = current_remaining - amount_in_usd
+            success = db.update_loan_remaining_amount(loan_id, new_remaining_amount)
+            if not success:
+                print(f"Warning: Failed to update loan remaining amount for loan {loan_id}")
+        else:
+            print(f"Warning: Could not find loan {loan_id} to update remaining amount")
+        
+        # Update source balance for the loan payment
+        try:
+            db.update_source_balance(
+                payment.source_id, 
+                amount_in_usd, 
+                db.get_exchange_rate(), 
+                is_deposit=False  # This is an expense
+            )
+        except Exception as e:
+            print(f"Warning: Failed to update source balance: {e}")
+        
+        # Create expense transaction if requested
+        if payment.create_expense_transaction:
+            try:
+                # Get or create a "loan-payment" category
+                categories = db.get_all_categories()
+                loan_category_id = None
+                for cat in categories:
+                    if cat[1] == "loan-payment":  # cat[1] is the name
+                        loan_category_id = cat[0]  # cat[0] is the id
+                        break
+                
+                if not loan_category_id:
+                    # Create loan-payment category if it doesn't exist
+                    loan_category_id = db.add_category("loan-payment")
+                
+                # Create expense transaction (without updating source balance since loan payment handles it)
+                transaction_id = db.add_transaction(
+                    name=f"Loan Payment - {payment.loan_name}",
+                    date=payment.payment_date,
+                    price_in_dollar=amount_in_usd,
+                    your_currency_rate=db.get_exchange_rate(),
+                    category_id=loan_category_id,
+                    source_id=payment.source_id,
+                    is_deposit=False,  # This is an expense
+                    user_id=current_user[0],
+                    update_balance=False  # Don't update source balance to avoid double deduction
+                )
+                
+                if not transaction_id:
+                    print(f"Warning: Failed to create expense transaction for loan payment {payment_id}")
+                
+            except Exception as e:
+                print(f"Warning: Failed to create expense transaction: {str(e)}")
+                # Don't fail the loan payment if expense creation fails
         
         return {"id": payment_id, "message": "Loan payment created successfully"}
     except Exception as e:

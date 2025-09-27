@@ -147,6 +147,106 @@ let allLoans = [];
 let currentEditingTransactionId = null;
 let loanDisplayMode = 'default'; // 'default', 'usd', or 'toman'
 
+// Toast Notification System
+function showToast(message, type = 'info', duration = 4000) {
+    const toastContainer = document.getElementById('toast-container');
+    if (!toastContainer) {
+        console.error('Toast container not found');
+        return;
+    }
+
+    // Create unique ID for the toast
+    const toastId = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    
+    // Define toast styles based on type
+    const toastStyles = {
+        success: {
+            icon: 'fas fa-check-circle',
+            bgClass: 'bg-success',
+            textClass: 'text-white'
+        },
+        error: {
+            icon: 'fas fa-exclamation-circle',
+            bgClass: 'bg-danger',
+            textClass: 'text-white'
+        },
+        warning: {
+            icon: 'fas fa-exclamation-triangle',
+            bgClass: 'bg-warning',
+            textClass: 'text-dark'
+        },
+        info: {
+            icon: 'fas fa-info-circle',
+            bgClass: 'bg-info',
+            textClass: 'text-white'
+        }
+    };
+
+    const style = toastStyles[type] || toastStyles.info;
+
+    // Create toast HTML
+    const toastHTML = `
+        <div id="${toastId}" class="toast show ${style.bgClass} ${style.textClass}" role="alert" aria-live="assertive" aria-atomic="true" style="min-width: 300px; max-width: 400px;">
+            <div class="toast-header ${style.bgClass} ${style.textClass} border-0">
+                <i class="${style.icon} me-2"></i>
+                <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+
+    // Add toast to container
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+    // Get the toast element
+    const toastElement = document.getElementById(toastId);
+    
+    // Auto-remove toast after duration
+    setTimeout(() => {
+        if (toastElement) {
+            toastElement.classList.remove('show');
+            setTimeout(() => {
+                if (toastElement.parentNode) {
+                    toastElement.parentNode.removeChild(toastElement);
+                }
+            }, 300); // Wait for fade out animation
+        }
+    }, duration);
+
+    // Add click to dismiss functionality
+    const closeBtn = toastElement.querySelector('.btn-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            toastElement.classList.remove('show');
+            setTimeout(() => {
+                if (toastElement.parentNode) {
+                    toastElement.parentNode.removeChild(toastElement);
+                }
+            }, 300);
+        });
+    }
+}
+
+// Convenience functions for different toast types
+function showSuccessToast(message, duration = 4000) {
+    showToast(message, 'success', duration);
+}
+
+function showErrorToast(message, duration = 6000) {
+    showToast(message, 'error', duration);
+}
+
+function showWarningToast(message, duration = 5000) {
+    showToast(message, 'warning', duration);
+}
+
+function showInfoToast(message, duration = 4000) {
+    showToast(message, 'info', duration);
+}
+
 // Load categories from API
 async function loadCategories() {
     if (!checkAuth()) return;
@@ -265,7 +365,7 @@ function parseTransactionDescription() {
     
     const description = document.getElementById('transactionDescription').value;
     if (!description) {
-        alert('Please enter a transaction description.');
+        showWarningToast('Please enter a transaction description.');
         return;
     }
     
@@ -348,7 +448,7 @@ function parseTransactionDescription() {
     })
     .catch(error => {
         console.error('Error parsing transaction:', error);
-        alert('Failed to parse transaction. Please try again or fill the form manually.');
+        showErrorToast('Failed to parse transaction. Please try again or fill the form manually.');
     })
     .finally(() => {
         // Reset button state
@@ -378,18 +478,18 @@ function saveTransaction() {
     
     // Validate form
     if (!name || !date || isNaN(price) || !category_name || !source_name) {
-        alert('Please fill all fields correctly.');
+        showWarningToast('Please fill all fields correctly.');
         return;
     }
     
     // Check if categories and sources are loaded
     if (!allCategories || allCategories.length === 0) {
-        alert('Categories are still loading. Please wait a moment and try again.');
+        showWarningToast('Categories are still loading. Please wait a moment and try again.');
         return;
     }
     
     if (!allSources || allSources.length === 0) {
-        alert('Sources are still loading. Please wait a moment and try again.');
+        showWarningToast('Sources are still loading. Please wait a moment and try again.');
         return;
     }
 
@@ -402,7 +502,7 @@ function saveTransaction() {
     
     if (!cat || !src) {
         console.error('Category or source not found:', { cat, src, category_name, source_name });
-        alert('Invalid category or source. Please make sure categories and sources are loaded.');
+        showErrorToast('Invalid category or source. Please make sure categories and sources are loaded.');
         return;
     }
 
@@ -480,7 +580,7 @@ function saveTransaction() {
     })
     .catch(error => {
         console.error('Error saving transaction:', error);
-        alert(error.message || 'Failed to save transaction. Please try again.');
+        showErrorToast(error.message || 'Failed to save transaction. Please try again.');
     })
     .finally(() => {
         // Reset button state
@@ -499,7 +599,7 @@ function saveSource() {
     
     // Validate form
     if (!name || isNaN(value)) {
-        alert('Please fill all fields correctly.');
+        showWarningToast('Please fill all fields correctly.');
         return;
     }
     
@@ -548,11 +648,11 @@ function saveSource() {
         loadSources();
         
         // Show success message
-        alert('Source added successfully!');
+        showSuccessToast('Source added successfully!');
     })
     .catch(error => {
         console.error('Error saving source:', error);
-        alert(error.message || 'Failed to save source. Please try again.');
+        showErrorToast(error.message || 'Failed to save source. Please try again.');
     })
     .finally(() => {
         // Reset button state
@@ -962,7 +1062,7 @@ function editTransaction(transactionId) {
     // Find the transaction in allTransactions
     const transaction = allTransactions.find(tx => tx.id === transactionId);
     if (!transaction) {
-        alert('Transaction not found');
+        showErrorToast('Transaction not found');
         return;
     }
     
@@ -981,7 +1081,7 @@ function deleteTransaction(transactionId) {
     // Find the transaction in allTransactions
     const transaction = allTransactions.find(tx => tx.id === transactionId);
     if (!transaction) {
-        alert('Transaction not found');
+        showErrorToast('Transaction not found');
         return;
     }
     
@@ -1022,11 +1122,11 @@ function deleteTransaction(transactionId) {
         updateTransactionsTable(currentPage);
         loadSources(); // Refresh sources to update balances
         
-        alert('Transaction deleted successfully');
+        showSuccessToast('Transaction deleted successfully');
     })
     .catch(error => {
         console.error('Error deleting transaction:', error);
-        alert(error.message || 'Failed to delete transaction. Please try again.');
+        showErrorToast(error.message || 'Failed to delete transaction. Please try again.');
     })
     .finally(() => {
         hideLoadingOverlay();
@@ -1062,7 +1162,7 @@ function saveEditedTransaction() {
     const transactionId = form.dataset.transactionId;
     
     if (!transactionId) {
-        alert('Transaction ID not found');
+        showErrorToast('Transaction ID not found');
         return;
     }
     
@@ -1077,7 +1177,7 @@ function saveEditedTransaction() {
     
     // Validate form
     if (!name || !date || isNaN(price) || !category_id || !source_id) {
-        alert('Please fill all fields correctly.');
+        showWarningToast('Please fill all fields correctly.');
         return;
     }
     
@@ -1142,11 +1242,11 @@ function saveEditedTransaction() {
         updateTransactionsTable(currentPage);
         loadSources(); // Refresh sources to update balances
         
-        alert('Transaction updated successfully');
+        showSuccessToast('Transaction updated successfully');
     })
     .catch(error => {
         console.error('Error updating transaction:', error);
-        alert(error.message || 'Failed to update transaction. Please try again.');
+        showErrorToast(error.message || 'Failed to update transaction. Please try again.');
     })
     .finally(() => {
         // Reset button state
@@ -1564,7 +1664,7 @@ function editTransaction(transactionId) {
     // Find the transaction in allTransactions
     const transaction = allTransactions.find(tx => tx.id === transactionId);
     if (!transaction) {
-        alert('Transaction not found');
+        showErrorToast('Transaction not found');
         return;
     }
     
@@ -1617,7 +1717,7 @@ function populateEditForm(transaction) {
 
 async function saveEditedTransaction() {
     if (!currentEditingTransactionId) {
-        alert('No transaction selected for editing');
+        showWarningToast('No transaction selected for editing');
         return;
     }
     
@@ -1654,11 +1754,11 @@ async function saveEditedTransaction() {
             currentEditingTransactionId = null;
         } else {
             const errorData = await response.json();
-            alert('Error updating transaction: ' + (errorData.detail || 'Unknown error'));
+            showErrorToast('Error updating transaction: ' + (errorData.detail || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error updating transaction:', error);
-        alert('Error updating transaction');
+        showErrorToast('Error updating transaction');
     }
 }
 
@@ -1677,13 +1777,13 @@ function deleteTransaction(transactionId) {
             loadTransactions(month);
         } else {
             return response.json().then(data => {
-                alert('Error deleting transaction: ' + (data.detail || 'Unknown error'));
+                showErrorToast('Error deleting transaction: ' + (data.detail || 'Unknown error'));
             });
         }
     })
     .catch(error => {
         console.error('Error deleting transaction:', error);
-        alert('Error deleting transaction');
+        showErrorToast('Error deleting transaction');
     });
 }
 
@@ -1736,7 +1836,7 @@ async function downloadMonthlyReport() {
         
         if (!monthSelect || !yearSelect) {
             console.error('Month or year select elements not found');
-            alert('Report selectors not found. Please refresh the page.');
+            showErrorToast('Report selectors not found. Please refresh the page.');
             return;
         }
         
@@ -1775,14 +1875,14 @@ async function downloadMonthlyReport() {
             document.body.removeChild(a);
             
             // Show success message
-            alert('Monthly report downloaded successfully!');
+            showSuccessToast('Monthly report downloaded successfully!');
         } else {
             const errorData = await response.json();
-            alert('Error downloading report: ' + (errorData.detail || 'Unknown error'));
+            showErrorToast('Error downloading report: ' + (errorData.detail || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error downloading report:', error);
-        alert('Error downloading report. Please try again.');
+        showErrorToast('Error downloading report. Please try again.');
     } finally {
         // Reset button state
         const downloadBtn = document.getElementById('downloadReportBtn');
@@ -2070,7 +2170,7 @@ function saveLoan() {
     console.log('Form values:', { name, totalAmount, monthlyPayment, isUsd });
     
     if (!name || !totalAmount || !monthlyPayment) {
-        alert('Please fill all required fields.');
+        showWarningToast('Please fill all required fields.');
         return;
     }
     
@@ -2112,11 +2212,11 @@ function saveLoan() {
         loadLoans();
         loadLoanSummary();
         
-        alert('Loan created successfully!');
+        showSuccessToast('Loan created successfully!');
     })
     .catch(error => {
         console.error('Error saving loan:', error);
-        alert(error.message || 'Failed to save loan. Please try again.');
+        showErrorToast(error.message || 'Failed to save loan. Please try again.');
     })
     .finally(() => {
         const saveBtn = document.getElementById('saveLoanBtn');
@@ -2143,16 +2243,20 @@ function saveLoanPayment() {
     const amount = parseFloat(document.getElementById('paymentAmount').value);
     const paymentDate = document.getElementById('paymentDate').value;
     const sourceId = document.getElementById('paymentSource').value;
-    const markAsPaid = document.getElementById('markAsPaid').checked;
+    const isUsd = document.getElementById('paymentCurrencySelect').value === 'true';
     
     if (!loanId || !amount || !paymentDate || !sourceId) {
-        alert('Please fill all required fields.');
+        showWarningToast('Please fill all required fields.');
         return;
     }
     
     const saveBtn = document.getElementById('saveLoanPaymentBtn');
     saveBtn.textContent = 'Saving...';
     saveBtn.disabled = true;
+    
+    // Get loan details for expense transaction
+    const selectedLoan = allLoans.find(loan => loan.id == loanId);
+    const loanName = selectedLoan ? selectedLoan.name : 'Unknown Loan';
     
     fetchWithAuth(`/api/loans/${loanId}/payments`, {
         method: 'POST',
@@ -2163,7 +2267,10 @@ function saveLoanPayment() {
             loan_id: parseInt(loanId),
             amount: amount,
             payment_date: paymentDate,
-            source_id: parseInt(sourceId)
+            source_id: parseInt(sourceId),
+            is_usd: isUsd,
+            create_expense_transaction: true,  // Always create expense
+            loan_name: loanName
         })
     })
     .then(response => {
@@ -2175,12 +2282,7 @@ function saveLoanPayment() {
         return response.json();
     })
     .then(data => {
-        // If mark as paid is checked, mark the payment as paid
-        if (markAsPaid) {
-            return fetchWithAuth(`/api/loans/payments/${data.id}/pay`, {
-                method: 'PUT'
-            });
-        }
+        // Payment is automatically marked as paid on the backend
         return Promise.resolve();
     })
     .then(() => {
@@ -2195,11 +2297,11 @@ function saveLoanPayment() {
         loadLoans();
         loadLoanSummary();
         
-        alert('Loan payment created successfully!');
+        showSuccessToast('Loan payment created successfully! Expense transaction also created.');
     })
     .catch(error => {
         console.error('Error saving loan payment:', error);
-        alert(error.message || 'Failed to save loan payment. Please try again.');
+        showErrorToast(error.message || 'Failed to save loan payment. Please try again.');
     })
     .finally(() => {
         saveBtn.textContent = 'Save Payment';
@@ -2211,7 +2313,7 @@ function viewLoanDetails(loanId) {
     // Find the loan
     const loan = allLoans.find(l => l.id === loanId);
     if (!loan) {
-        alert('Loan not found');
+        showErrorToast('Loan not found');
         return;
     }
     
@@ -2251,7 +2353,7 @@ function viewLoanDetails(loanId) {
 function deleteLoan(loanId) {
     const loan = allLoans.find(l => l.id === loanId);
     if (!loan) {
-        alert('Loan not found');
+        showErrorToast('Loan not found');
         return;
     }
     
@@ -2279,11 +2381,11 @@ function deleteLoan(loanId) {
         updateLoansTable(allLoans);
         loadLoanSummary();
         
-        alert('Loan deleted successfully');
+        showSuccessToast('Loan deleted successfully');
     })
     .catch(error => {
         console.error('Error deleting loan:', error);
-        alert(error.message || 'Failed to delete loan. Please try again.');
+        showErrorToast(error.message || 'Failed to delete loan. Please try again.');
     });
 }
 

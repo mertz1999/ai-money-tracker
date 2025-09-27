@@ -1,0 +1,56 @@
+<!-- Loans Table Component - Mobile PWA Design -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Loans</h5>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addLoanModal">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        <!-- Currency Toggle for Mobile -->
+        <div class="currency-toggle-mobile mt-2">
+            <div class="btn-group w-100" role="group">
+                <button class="btn btn-sm btn-outline-secondary loan-currency-toggle active" 
+                        data-mode="default" 
+                        onclick="toggleLoanDisplayMode('default')">
+                    Default
+                </button>
+                <button class="btn btn-sm btn-outline-secondary loan-currency-toggle" 
+                        data-mode="usd" 
+                        onclick="toggleLoanDisplayMode('usd')">
+                    USD
+                </button>
+                <button class="btn btn-sm btn-outline-secondary loan-currency-toggle" 
+                        data-mode="toman" 
+                        onclick="toggleLoanDisplayMode('toman')">
+                    Toman
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <!-- Mobile-optimized loans list -->
+        <div class="loans-list" id="loans-list">
+            <!-- Loans will be loaded dynamically as mobile cards -->
+        </div>
+        
+        <!-- Desktop table (hidden on mobile) -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table loans-table" id="loans-table">
+                <thead>
+                    <tr>
+                        <th>Loan Name</th>
+                        <th>Total Amount</th>
+                        <th>Monthly Payment</th>
+                        <th>Remaining</th>
+                        <th>Progress</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Loans will be loaded dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

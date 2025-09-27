@@ -1280,6 +1280,96 @@ body {
     }
 }
 
+/* Loan-specific styles */
+.loan-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.loan-amount {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.loans-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+/* Progress bar enhancements for loans */
+.progress {
+    background-color: var(--gray-200);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width var(--transition-normal);
+}
+
+/* Loan summary cards specific styling */
+.summary-card:nth-child(5)::before {
+    background: var(--warning-color);
+}
+
+.summary-card:nth-child(6)::before {
+    background: var(--danger-color);
+}
+
+.summary-card:nth-child(7)::before {
+    background: var(--info-color);
+}
+
+.summary-card:nth-child(8)::before {
+    background: var(--primary-color);
+}
+
+/* Loan modal specific styles */
+#addLoanModal .form-control,
+#addLoanModal .form-select {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--gray-200) !important;
+}
+
+#addLoanModal .form-control:focus,
+#addLoanModal .form-select:focus {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+#addLoanPaymentModal .form-control,
+#addLoanPaymentModal .form-select {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--gray-200) !important;
+}
+
+#addLoanPaymentModal .form-control:focus,
+#addLoanPaymentModal .form-select:focus {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* Loan currency toggle buttons */
+.loan-currency-toggle.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
 /* High contrast mode support */
 @media (prefers-contrast: high) {
     :root {

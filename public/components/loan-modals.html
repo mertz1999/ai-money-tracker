@@ -1,0 +1,194 @@
+<!-- Add Loan Modal - Mobile PWA Design -->
+<div class="modal fade" id="addLoanModal" tabindex="-1" aria-labelledby="addLoanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addLoanModalLabel">
+                    <i class="fas fa-hand-holding-usd me-2"></i>
+                    Add Loan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addLoanForm">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="loanName" class="form-label">
+                                <i class="fas fa-tag me-1"></i>
+                                Loan Name
+                            </label>
+                            <input type="text" class="form-control form-control-lg" id="loanName" 
+                                   placeholder="e.g., Car Loan, Mortgage, Personal Loan" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label for="loanTotalAmount" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i>
+                                Total Amount
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text" id="loanTotalCurrency">$</span>
+                                <input type="number" class="form-control" id="loanTotalAmount" 
+                                       step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label for="loanCurrency" class="form-label">
+                                <i class="fas fa-coins me-1"></i>
+                                Currency
+                            </label>
+                            <select class="form-select form-select-lg" id="loanCurrency" required>
+                                <option value="true">USD ($)</option>
+                                <option value="false">Toman (T)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="loanMonthlyPayment" class="form-label">
+                                <i class="fas fa-calendar-alt me-1"></i>
+                                Monthly Payment
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text" id="loanMonthlyCurrency">$</span>
+                                <input type="number" class="form-control" id="loanMonthlyPayment" 
+                                       step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveLoanBtn">
+                    <i class="fas fa-save me-1"></i>
+                    Save Loan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Loan Payment Modal -->
+<div class="modal fade" id="addLoanPaymentModal" tabindex="-1" aria-labelledby="addLoanPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addLoanPaymentModalLabel">
+                    <i class="fas fa-credit-card me-2"></i>
+                    Add Loan Payment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addLoanPaymentForm">
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="paymentLoanSelect" class="form-label">
+                                <i class="fas fa-hand-holding-usd me-1"></i>
+                                Select Loan
+                            </label>
+                            <select class="form-select form-select-lg" id="paymentLoanSelect" required>
+                                <!-- Loans will be loaded dynamically -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label for="paymentAmount" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i>
+                                Payment Amount
+                            </label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text" id="paymentCurrency">$</span>
+                                <input type="number" class="form-control" id="paymentAmount" 
+                                       step="0.01" min="0" placeholder="0.00" required>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label for="paymentDate" class="form-label">
+                                <i class="fas fa-calendar me-1"></i>
+                                Payment Date
+                            </label>
+                            <input type="date" class="form-control form-control-lg" id="paymentDate" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="paymentSource" class="form-label">
+                                <i class="fas fa-wallet me-1"></i>
+                                Payment Source
+                            </label>
+                            <select class="form-select form-select-lg" id="paymentSource" required>
+                                <!-- Sources will be loaded dynamically -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="markAsPaid" checked>
+                                <label class="form-check-label" for="markAsPaid">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Mark as paid immediately
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                If checked, the payment will be marked as paid and the loan remaining amount will be updated.
+                            </small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveLoanPaymentBtn">
+                    <i class="fas fa-save me-1"></i>
+                    Save Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loan Details Modal -->
+<div class="modal fade" id="loanDetailsModal" tabindex="-1" aria-labelledby="loanDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loanDetailsModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Loan Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="loanDetailsContent">
+                    <!-- Loan details will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Close
+                </button>
+                <button type="button" class="btn btn-primary" id="addPaymentFromDetailsBtn">
+                    <i class="fas fa-plus me-1"></i>
+                    Add Payment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

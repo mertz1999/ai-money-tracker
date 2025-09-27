@@ -68,6 +68,51 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Add event listener for add loan modal
+    const addLoanModal = document.getElementById('addLoanModal');
+    if (addLoanModal) {
+        addLoanModal.addEventListener('show.bs.modal', function () {
+            // Reset form
+            const addLoanForm = document.getElementById('addLoanForm');
+            if (addLoanForm) {
+                addLoanForm.reset();
+            }
+        });
+    }
+
+    // Add event listener for save loan button using event delegation
+    document.addEventListener('click', function(e) {
+        console.log('Click detected on:', e.target);
+        if (e.target && e.target.id === 'saveLoanBtn') {
+            console.log('Save loan button clicked');
+            e.preventDefault();
+            saveLoan();
+        }
+        if (e.target && e.target.id === 'saveLoanPaymentBtn') {
+            console.log('Save loan payment button clicked');
+            e.preventDefault();
+            saveLoanPayment();
+        }
+        if (e.target && e.target.id === 'addPaymentFromDetailsBtn') {
+            console.log('Add payment from details button clicked');
+            e.preventDefault();
+            addLoanPayment();
+        }
+    });
+
+    // Add event listener for currency change in loan modal
+    document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'loanCurrency') {
+            const currency = e.target.value === 'true' ? '$' : 'T';
+            const totalCurrency = document.getElementById('loanTotalCurrency');
+            const monthlyCurrency = document.getElementById('loanMonthlyCurrency');
+            if (totalCurrency) totalCurrency.textContent = currency;
+            if (monthlyCurrency) monthlyCurrency.textContent = currency;
+        }
+    });
+
+    // Loan modal event listeners will be attached in initializePWAApp() after components are loaded
     
     // Currency toggle functionality
     const currencyItems = document.querySelectorAll('.dropdown-item');
@@ -98,7 +143,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // Add global state for categories and sources
 let allCategories = [];
 let allSources = [];
+let allLoans = [];
 let currentEditingTransactionId = null;
+let loanDisplayMode = 'default'; // 'default', 'usd', or 'toman'
 
 // Load categories from API
 async function loadCategories() {
@@ -127,12 +174,19 @@ async function loadCategories() {
 
 // Load sources from API
 async function loadSources() {
-    if (!checkAuth()) return;
+    console.log('loadSources() called');
+    if (!checkAuth()) {
+        console.log('checkAuth() returned false, redirecting to login');
+        return;
+    }
     
+    console.log('Making API call to /api/sources');
     try {
         const response = await fetchWithAuth('/api/sources');
+        console.log('Sources API response:', response);
         if (response.ok) {
             const sources = await response.json();
+            console.log('Sources data received:', sources);
             const sourceSelect = document.getElementById('transactionSource');
             if (sourceSelect) {
                 sourceSelect.innerHTML = '';
@@ -145,6 +199,8 @@ async function loadSources() {
             }
             updateSourcesTable(sources);
             allSources = sources;
+        } else {
+            console.error('Sources API response not ok:', response.status, response.statusText);
         }
     } catch (error) {
         console.error('Error loading sources:', error);
@@ -1407,6 +1463,10 @@ function loadInitialData() {
     // Load transactions for current month
     loadTransactions(currentMonth);
     
+    // Load loans and loan summary
+    loadLoans();
+    loadLoanSummary();
+    
     // Load exchange rate
     fetchExchangeRate();
     
@@ -1733,12 +1793,514 @@ async function downloadMonthlyReport() {
     }
 }
 
+// Loan Management Functions
+async function loadLoans() {
+    console.log('loadLoans() called');
+    if (!checkAuth()) {
+        console.log('checkAuth() returned false, redirecting to login');
+        return;
+    }
+    
+    console.log('Making API call to /api/loans');
+    try {
+        const response = await fetchWithAuth('/api/loans');
+        console.log('Loans API response:', response);
+        if (response.ok) {
+            const loans = await response.json();
+            console.log('Loans data received:', loans);
+            allLoans = loans;
+            updateLoansTable(loans);
+        } else {
+            console.error('Loans API response not ok:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('Error loading loans:', error);
+    }
+}
+
+async function loadLoanSummary() {
+    if (!checkAuth()) return;
+    
+    try {
+        const response = await fetchWithAuth('/api/loans/summary');
+        if (response.ok) {
+            const summary = await response.json();
+            updateLoanSummaryCards(summary);
+        }
+    } catch (error) {
+        console.error('Error loading loan summary:', error);
+    }
+}
+
+function updateLoansTable(loans) {
+    // Update mobile loans list
+    const loansList = document.querySelector('#loans-list');
+    if (loansList) {
+        loansList.innerHTML = '';
+        if (loans.length === 0) {
+            loansList.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-hand-holding-usd fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No loans found</h5>
+                    <p class="text-muted">You don't have any active loans yet.</p>
+                </div>
+            `;
+        } else {
+            loans.forEach(loan => {
+                const loanCard = createLoanCard(loan);
+                loansList.appendChild(loanCard);
+            });
+        }
+    }
+    
+    // Update desktop table
+    const tbody = document.querySelector('#loans-table tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        if (loans.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <i class="fas fa-hand-holding-usd fa-2x text-muted mb-2"></i>
+                        <h6 class="text-muted">No loans found</h6>
+                        <p class="text-muted mb-0">You don't have any active loans yet.</p>
+                    </td>
+                </tr>
+            `;
+        } else {
+            loans.forEach(loan => {
+                const row = document.createElement('tr');
+                
+                // Calculate progress percentage
+                const progress = ((loan.total_amount - loan.remaining_amount) / loan.total_amount) * 100;
+                
+                // Format amounts based on currency and display mode
+                const totalAmount = formatLoanAmount(loan.total_amount, loan.is_usd);
+                const monthlyPayment = formatLoanAmount(loan.monthly_payment, loan.is_usd);
+                const remainingAmount = formatLoanAmount(loan.remaining_amount, loan.is_usd);
+                
+                row.innerHTML = `
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="loan-icon bg-warning">
+                                <i class="fas fa-hand-holding-usd"></i>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="mb-0">${loan.name}</h6>
+                                <small class="text-muted">Monthly: ${monthlyPayment}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="loan-amount" data-usd="${loan.is_usd ? loan.total_amount : loan.total_amount / currentExchangeRate}" 
+                        data-toman="${loan.is_usd ? loan.total_amount * currentExchangeRate : loan.total_amount}"
+                        data-default="${loan.is_usd ? `$${loan.total_amount.toFixed(2)}` : `${loan.total_amount.toLocaleString()} T`}">
+                        ${totalAmount}
+                    </td>
+                    <td class="loan-amount" data-usd="${loan.is_usd ? loan.monthly_payment : loan.monthly_payment / currentExchangeRate}" 
+                        data-toman="${loan.is_usd ? loan.monthly_payment * currentExchangeRate : loan.monthly_payment}"
+                        data-default="${loan.is_usd ? `$${loan.monthly_payment.toFixed(2)}` : `${loan.monthly_payment.toLocaleString()} T`}">
+                        ${monthlyPayment}
+                    </td>
+                    <td class="loan-amount" data-usd="${loan.is_usd ? loan.remaining_amount : loan.remaining_amount / currentExchangeRate}" 
+                        data-toman="${loan.is_usd ? loan.remaining_amount * currentExchangeRate : loan.remaining_amount}"
+                        data-default="${loan.is_usd ? `$${loan.remaining_amount.toFixed(2)}` : `${loan.remaining_amount.toLocaleString()} T`}">
+                        ${remainingAmount}
+                    </td>
+                    <td>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: ${progress.toFixed(1)}%" 
+                                 aria-valuenow="${progress.toFixed(1)}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                        <small class="text-muted">${progress.toFixed(1)}% paid</small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-info" onclick="viewLoanDetails(${loan.id})" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="addLoanPayment(${loan.id})" title="Add Payment">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="deleteLoan(${loan.id})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+    }
+}
+
+function createLoanCard(loan) {
+    const card = document.createElement('div');
+    card.className = 'table-row';
+    
+    // Calculate progress percentage
+    const progress = ((loan.total_amount - loan.remaining_amount) / loan.total_amount) * 100;
+    
+    // Format amounts
+    const totalAmount = formatLoanAmount(loan.total_amount, loan.is_usd);
+    const monthlyPayment = formatLoanAmount(loan.monthly_payment, loan.is_usd);
+    const remainingAmount = formatLoanAmount(loan.remaining_amount, loan.is_usd);
+    
+    card.innerHTML = `
+        <div class="table-row-icon bg-warning">
+            <i class="fas fa-hand-holding-usd"></i>
+        </div>
+        <div class="table-row-content">
+            <h6 class="table-row-title">${loan.name}</h6>
+            <p class="table-row-subtitle">
+                Monthly: ${monthlyPayment} • ${progress.toFixed(1)}% paid
+            </p>
+            <div class="progress mb-2" style="height: 4px;">
+                <div class="progress-bar bg-success" role="progressbar" 
+                     style="width: ${progress.toFixed(1)}%">
+                </div>
+            </div>
+        </div>
+        <div class="table-row-value">
+            <div class="text-end">
+                <div class="fw-bold">${remainingAmount}</div>
+                <small class="text-muted">of ${totalAmount}</small>
+            </div>
+        </div>
+        <div class="table-row-actions">
+            <button class="btn btn-sm btn-outline-info" onclick="viewLoanDetails(${loan.id})" title="View Details">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-primary" onclick="addLoanPayment(${loan.id})" title="Add Payment">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteLoan(${loan.id})" title="Delete">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    `;
+    
+    return card;
+}
+
+function formatAmount(amount, isUsd) {
+    if (displayInUSD) {
+        const usdAmount = isUsd ? amount : amount / currentExchangeRate;
+        return `$${usdAmount.toFixed(2)}`;
+    } else {
+        const tomanAmount = isUsd ? amount * currentExchangeRate : amount;
+        return `${tomanAmount.toLocaleString()} T`;
+    }
+}
+
+function formatLoanAmount(amount, isUsd) {
+    if (loanDisplayMode === 'usd') {
+        const usdAmount = isUsd ? amount : amount / currentExchangeRate;
+        return `$${usdAmount.toFixed(2)}`;
+    } else if (loanDisplayMode === 'toman') {
+        const tomanAmount = isUsd ? amount * currentExchangeRate : amount;
+        return `${tomanAmount.toLocaleString()} T`;
+    } else {
+        return isUsd ? `$${amount.toFixed(2)}` : `${amount.toLocaleString()} T`;
+    }
+}
+
+function toggleLoanDisplayMode(mode) {
+    loanDisplayMode = mode;
+    
+    // Update all loan amount cells
+    const loanCells = document.querySelectorAll('.loan-amount');
+    loanCells.forEach(cell => {
+        let value;
+        switch (mode) {
+            case 'usd':
+                value = `$${cell.getAttribute('data-usd')}`;
+                break;
+            case 'toman':
+                value = `${cell.getAttribute('data-toman')} T`;
+                break;
+            default:
+                value = cell.getAttribute('data-default');
+        }
+        cell.textContent = value;
+    });
+    
+    // Update toggle button states
+    const buttons = document.querySelectorAll('.loan-currency-toggle');
+    buttons.forEach(button => {
+        button.classList.toggle('active', button.getAttribute('data-mode') === mode);
+    });
+    
+    // Reload loans to update the display
+    loadLoans();
+}
+
+function updateLoanSummaryCards(summary) {
+    const totalLoansEl = document.querySelector('#totalLoans');
+    const totalRemainingEl = document.querySelector('#totalRemaining');
+    const totalMonthlyPaymentsEl = document.querySelector('#totalMonthlyPayments');
+    const totalBorrowedEl = document.querySelector('#totalBorrowed');
+    
+    if (totalLoansEl) {
+        totalLoansEl.textContent = summary.total_loans;
+    }
+    if (totalRemainingEl) {
+        totalRemainingEl.textContent = `$${summary.total_remaining.toFixed(2)}`;
+    }
+    if (totalMonthlyPaymentsEl) {
+        totalMonthlyPaymentsEl.textContent = `$${summary.avg_monthly_payment.toFixed(2)}`;
+    }
+    if (totalBorrowedEl) {
+        totalBorrowedEl.textContent = `$${summary.total_borrowed.toFixed(2)}`;
+    }
+}
+
+// Loan CRUD operations
+function saveLoan() {
+    console.log('saveLoan function called');
+    
+    const name = document.getElementById('loanName').value;
+    const totalAmount = parseFloat(document.getElementById('loanTotalAmount').value);
+    const monthlyPayment = parseFloat(document.getElementById('loanMonthlyPayment').value);
+    const isUsd = document.getElementById('loanCurrency').value === 'true';
+    
+    console.log('Form values:', { name, totalAmount, monthlyPayment, isUsd });
+    
+    if (!name || !totalAmount || !monthlyPayment) {
+        alert('Please fill all required fields.');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('saveLoanBtn');
+    if (saveBtn) {
+        saveBtn.textContent = 'Saving...';
+        saveBtn.disabled = true;
+    }
+    
+    fetchWithAuth('/api/loans', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name,
+            total_amount: totalAmount,
+            monthly_payment: monthlyPayment,
+            is_usd: isUsd
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`Failed to save loan: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Close modal and refresh data
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addLoanModal'));
+        modal.hide();
+        
+        // Reset form
+        document.getElementById('addLoanForm').reset();
+        
+        // Refresh data
+        loadLoans();
+        loadLoanSummary();
+        
+        alert('Loan created successfully!');
+    })
+    .catch(error => {
+        console.error('Error saving loan:', error);
+        alert(error.message || 'Failed to save loan. Please try again.');
+    })
+    .finally(() => {
+        const saveBtn = document.getElementById('saveLoanBtn');
+        if (saveBtn) {
+            saveBtn.textContent = 'Save Loan';
+            saveBtn.disabled = false;
+        }
+    });
+}
+
+function addLoanPayment(loanId = null) {
+    // If loanId is provided, pre-select it
+    if (loanId) {
+        // Store the loan ID for when the modal opens
+        document.getElementById('addLoanPaymentModal').dataset.loanId = loanId;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('addLoanPaymentModal'));
+    modal.show();
+}
+
+function saveLoanPayment() {
+    const loanId = document.getElementById('paymentLoanSelect').value;
+    const amount = parseFloat(document.getElementById('paymentAmount').value);
+    const paymentDate = document.getElementById('paymentDate').value;
+    const sourceId = document.getElementById('paymentSource').value;
+    const markAsPaid = document.getElementById('markAsPaid').checked;
+    
+    if (!loanId || !amount || !paymentDate || !sourceId) {
+        alert('Please fill all required fields.');
+        return;
+    }
+    
+    const saveBtn = document.getElementById('saveLoanPaymentBtn');
+    saveBtn.textContent = 'Saving...';
+    saveBtn.disabled = true;
+    
+    fetchWithAuth(`/api/loans/${loanId}/payments`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            loan_id: parseInt(loanId),
+            amount: amount,
+            payment_date: paymentDate,
+            source_id: parseInt(sourceId)
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`Failed to save payment: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // If mark as paid is checked, mark the payment as paid
+        if (markAsPaid) {
+            return fetchWithAuth(`/api/loans/payments/${data.id}/pay`, {
+                method: 'PUT'
+            });
+        }
+        return Promise.resolve();
+    })
+    .then(() => {
+        // Close modal and refresh data
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addLoanPaymentModal'));
+        modal.hide();
+        
+        // Reset form
+        document.getElementById('addLoanPaymentForm').reset();
+        
+        // Refresh data
+        loadLoans();
+        loadLoanSummary();
+        
+        alert('Loan payment created successfully!');
+    })
+    .catch(error => {
+        console.error('Error saving loan payment:', error);
+        alert(error.message || 'Failed to save loan payment. Please try again.');
+    })
+    .finally(() => {
+        saveBtn.textContent = 'Save Payment';
+        saveBtn.disabled = false;
+    });
+}
+
+function viewLoanDetails(loanId) {
+    // Find the loan
+    const loan = allLoans.find(l => l.id === loanId);
+    if (!loan) {
+        alert('Loan not found');
+        return;
+    }
+    
+    // Populate loan details
+    const detailsContent = document.getElementById('loanDetailsContent');
+    if (detailsContent) {
+        const progress = ((loan.total_amount - loan.remaining_amount) / loan.total_amount) * 100;
+        
+        detailsContent.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Loan Information</h6>
+                    <p><strong>Name:</strong> ${loan.name}</p>
+                    <p><strong>Total Amount:</strong> ${formatLoanAmount(loan.total_amount, loan.is_usd)}</p>
+                    <p><strong>Monthly Payment:</strong> ${formatLoanAmount(loan.monthly_payment, loan.is_usd)}</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Payment Status</h6>
+                    <p><strong>Remaining Amount:</strong> ${formatLoanAmount(loan.remaining_amount, loan.is_usd)}</p>
+                    <p><strong>Amount Paid:</strong> ${formatLoanAmount(loan.total_amount - loan.remaining_amount, loan.is_usd)}</p>
+                    <p><strong>Progress:</strong> ${progress.toFixed(1)}%</p>
+                    <div class="progress mb-3">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: ${progress.toFixed(1)}%">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('loanDetailsModal'));
+    modal.show();
+}
+
+function deleteLoan(loanId) {
+    const loan = allLoans.find(l => l.id === loanId);
+    if (!loan) {
+        alert('Loan not found');
+        return;
+    }
+    
+    const confirmDelete = confirm(`Are you sure you want to delete "${loan.name}"? This will also delete all associated payments.`);
+    if (!confirmDelete) {
+        return;
+    }
+    
+    fetchWithAuth(`/api/loans/${loanId}`, {
+        method: 'DELETE'
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                throw new Error(`Failed to delete loan: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Remove from allLoans array
+        allLoans = allLoans.filter(l => l.id !== loanId);
+        
+        // Refresh the display
+        updateLoansTable(allLoans);
+        loadLoanSummary();
+        
+        alert('Loan deleted successfully');
+    })
+    .catch(error => {
+        console.error('Error deleting loan:', error);
+        alert(error.message || 'Failed to delete loan. Please try again.');
+    });
+}
+
 // Make functions globally accessible for HTML tab switching
 window.loadSources = loadSources;
 window.loadTransactions = loadTransactions;
+window.loadLoans = loadLoans;
+window.loadLoanSummary = loadLoanSummary;
 window.currentMonth = currentMonth;
 window.editTransaction = editTransaction;
 window.deleteTransaction = deleteTransaction;
 window.logout = logout;
 window.downloadMonthlyReport = downloadMonthlyReport;
-window.attachDownloadButtonListener = attachDownloadButtonListener; 
+window.attachDownloadButtonListener = attachDownloadButtonListener;
+window.saveLoan = saveLoan;
+window.addLoanPayment = addLoanPayment;
+window.saveLoanPayment = saveLoanPayment;
+window.viewLoanDetails = viewLoanDetails;
+window.deleteLoan = deleteLoan;
+window.toggleLoanDisplayMode = toggleLoanDisplayMode; 

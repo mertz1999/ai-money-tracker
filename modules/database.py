@@ -65,6 +65,41 @@ class Database:
                 )
             ''')
             
+            # Create loans table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS loans (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    total_amount REAL NOT NULL,
+                    monthly_payment REAL NOT NULL,
+                    interest_rate REAL DEFAULT 0.0,
+                    start_date TEXT NOT NULL,
+                    end_date TEXT,
+                    remaining_amount REAL NOT NULL,
+                    is_usd BOOLEAN NOT NULL DEFAULT TRUE,
+                    user_id INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            ''')
+            
+            # Create loan payments table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS loan_payments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    loan_id INTEGER NOT NULL,
+                    amount REAL NOT NULL,
+                    payment_date TEXT NOT NULL,
+                    source_id INTEGER NOT NULL,
+                    is_paid BOOLEAN NOT NULL DEFAULT FALSE,
+                    user_id INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (loan_id) REFERENCES loans (id),
+                    FOREIGN KEY (source_id) REFERENCES sources (id),
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            ''')
+            
             # Add user_id column if it doesn't exist
             try:
                 cursor.execute('ALTER TABLE sources ADD COLUMN user_id INTEGER NOT NULL REFERENCES users(id)')
@@ -408,6 +443,141 @@ class Database:
             # Apply new effect
             self.update_source_balance(source_id, abs(price), your_currency_rate, is_deposit)
             return cursor.rowcount > 0 
+
+    # Loan management methods
+    def add_loan(self, name, total_amount, monthly_payment, is_usd, user_id):
+        """Add a new loan"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO loans 
+                       (name, total_amount, monthly_payment, interest_rate, start_date, end_date, remaining_amount, is_usd, user_id, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (name, total_amount, monthly_payment, 0.0, datetime.now().isoformat().split('T')[0], None, total_amount, is_usd, user_id, datetime.now().isoformat())
+                )
+                loan_id = cursor.lastrowid
+                conn.commit()
+                return loan_id
+        except sqlite3.IntegrityError:
+            return None
+
+    def get_all_loans(self, user_id):
+        """Get all loans for a user"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM loans WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
+            return cursor.fetchall()
+
+    def get_loan_by_id(self, loan_id, user_id):
+        """Get a loan by ID for a specific user"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM loans WHERE id = ? AND user_id = ?", (loan_id, user_id))
+            return cursor.fetchone()
+
+    def update_loan_remaining_amount(self, loan_id, new_remaining_amount):
+        """Update the remaining amount for a loan"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "UPDATE loans SET remaining_amount = ? WHERE id = ?",
+                (new_remaining_amount, loan_id)
+            )
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def add_loan_payment(self, loan_id, amount, payment_date, source_id, user_id, is_paid=False):
+        """Add a loan payment"""
+        try:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """INSERT INTO loan_payments 
+                       (loan_id, amount, payment_date, source_id, is_paid, user_id, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (loan_id, amount, payment_date, source_id, is_paid, user_id, datetime.now().isoformat())
+                )
+                payment_id = cursor.lastrowid
+                conn.commit()
+                return payment_id
+        except sqlite3.IntegrityError:
+            return None
+
+    def get_loan_payments(self, loan_id, user_id):
+        """Get all payments for a specific loan"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT lp.*, s.name as source_name 
+                FROM loan_payments lp
+                LEFT JOIN sources s ON lp.source_id = s.id
+                WHERE lp.loan_id = ? AND lp.user_id = ?
+                ORDER BY lp.payment_date DESC
+            """, (loan_id, user_id))
+            return cursor.fetchall()
+
+    def mark_payment_paid(self, payment_id, user_id):
+        """Mark a loan payment as paid and update loan remaining amount"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Get payment details
+            cursor.execute("""
+                SELECT lp.*, l.remaining_amount, l.is_usd 
+                FROM loan_payments lp
+                JOIN loans l ON lp.loan_id = l.id
+                WHERE lp.id = ? AND lp.user_id = ?
+            """, (payment_id, user_id))
+            payment = cursor.fetchone()
+            
+            if not payment:
+                return False
+            
+            # Mark payment as paid
+            cursor.execute(
+                "UPDATE loan_payments SET is_paid = TRUE WHERE id = ?",
+                (payment_id,)
+            )
+            
+            # Update loan remaining amount
+            new_remaining = payment[6] - payment[2]  # remaining_amount - amount
+            cursor.execute(
+                "UPDATE loans SET remaining_amount = ? WHERE id = ?",
+                (new_remaining, payment[1])  # new_remaining, loan_id
+            )
+            
+            conn.commit()
+            return True
+
+    def delete_loan(self, loan_id, user_id):
+        """Delete a loan and all its payments"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Delete all payments first
+            cursor.execute("DELETE FROM loan_payments WHERE loan_id = ? AND user_id = ?", (loan_id, user_id))
+            
+            # Delete the loan
+            cursor.execute("DELETE FROM loans WHERE id = ? AND user_id = ?", (loan_id, user_id))
+            
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def get_loan_summary(self, user_id):
+        """Get loan summary statistics for a user"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    COUNT(*) as total_loans,
+                    SUM(remaining_amount) as total_remaining,
+                    SUM(total_amount) as total_borrowed,
+                    AVG(monthly_payment) as avg_monthly_payment
+                FROM loans 
+                WHERE user_id = ?
+            """, (user_id,))
+            return cursor.fetchone()
 
 
 

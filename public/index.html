@@ -92,6 +92,10 @@
                         <i class="fas fa-list"></i>
                         <span>Transactions</span>
                     </button>
+                    <button class="tab-btn" data-tab="loans">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Loans</span>
+                    </button>
                 </div>
 
                 <!-- Tab Content -->
@@ -124,6 +128,9 @@
                         </div>
                         <div id="transactions-table-container"></div>
                     </div>
+                    <div class="tab-pane" id="loans-tab">
+                        <div id="loans-table-container"></div>
+                    </div>
                 </div>
             </div>
 
@@ -133,6 +140,7 @@
 
         <!-- Modals Container -->
         <div id="modals-container"></div>
+        <div id="loan-modals-container"></div>
 
         <!-- Loading Overlay -->
         <div class="loading-overlay" id="loadingOverlay">
@@ -211,7 +219,10 @@
                 { id: 'summary-cards-container', file: 'components/summary-cards.html' },
                 { id: 'sources-table-container', file: 'components/sources-table.html' },
                 { id: 'transactions-table-container', file: 'components/transactions-table.html' },
-                { id: 'modals-container', file: 'components/modals.html' }
+                { id: 'loans-table-container', file: 'components/loans-table.html' },
+                { id: 'loan-summary-cards-container', file: 'components/loan-summary-cards.html' },
+                { id: 'modals-container', file: 'components/modals.html' },
+                { id: 'loan-modals-container', file: 'components/loan-modals.html' }
             ];
 
             let loadedComponents = 0;
@@ -245,12 +256,119 @@
             // Initialize existing functionality
             initializeExistingFeatures();
             
+            // Initialize loan modal event listeners
+            initializeLoanModals();
+            
             // Load initial data
             loadInitialData();
             
             // Hide loading overlay
             hideLoadingOverlay();
             
+        }
+
+        function initializeLoanModals() {
+            console.log('Initializing loan modals...');
+            
+            // Add event listener for add loan payment modal
+            const addLoanPaymentModal = document.getElementById('addLoanPaymentModal');
+            if (addLoanPaymentModal) {
+                console.log('Found addLoanPaymentModal, attaching event listener');
+                addLoanPaymentModal.addEventListener('show.bs.modal', async function () {
+                    console.log('Add loan payment modal opened');
+                    console.log('Current token:', localStorage.getItem('token'));
+                    console.log('checkAuth() result:', checkAuth());
+                    
+                    try {
+                        // Load loans and sources when modal is opened
+                        console.log('Calling loadLoans()...');
+                        await loadLoans();
+                        console.log('Calling loadSources()...');
+                        await loadSources();
+                        
+                        console.log('Loans loaded:', allLoans);
+                        console.log('Sources loaded:', allSources);
+                    } catch (error) {
+                        console.error('Error loading data for loan payment modal:', error);
+                        alert('Error loading data. Please try again.');
+                        return;
+                    }
+                    
+                    // Populate loan dropdown
+                    const loanSelect = document.getElementById('paymentLoanSelect');
+                    console.log('Loan select element:', loanSelect);
+                    if (loanSelect) {
+                        loanSelect.innerHTML = '<option value="">Select a loan...</option>';
+                        
+                        if (allLoans && allLoans.length > 0) {
+                            console.log('Populating loans dropdown with', allLoans.length, 'loans');
+                            allLoans.forEach(loan => {
+                                const option = document.createElement('option');
+                                option.value = loan.id;
+                                option.textContent = `${loan.name} (${formatLoanAmount(loan.remaining_amount, loan.is_usd)} remaining)`;
+                                loanSelect.appendChild(option);
+                            });
+                        } else {
+                            console.log('No loans available');
+                            const option = document.createElement('option');
+                            option.value = '';
+                            option.textContent = 'No loans available';
+                            option.disabled = true;
+                            loanSelect.appendChild(option);
+                        }
+                    } else {
+                        console.error('Loan select element not found!');
+                    }
+                    
+                    // Populate source dropdown
+                    const sourceSelect = document.getElementById('paymentSource');
+                    console.log('Source select element:', sourceSelect);
+                    if (sourceSelect) {
+                        sourceSelect.innerHTML = '<option value="">Select a source...</option>';
+                        
+                        if (allSources && allSources.length > 0) {
+                            console.log('Populating sources dropdown with', allSources.length, 'sources');
+                            allSources.forEach(source => {
+                                const option = document.createElement('option');
+                                option.value = source.id;
+                                option.textContent = `${source.name} (${formatAmount(source.value, source.is_usd)})`;
+                                sourceSelect.appendChild(option);
+                            });
+                        } else {
+                            console.log('No sources available');
+                            const option = document.createElement('option');
+                            option.value = '';
+                            option.textContent = 'No sources available';
+                            option.disabled = true;
+                            sourceSelect.appendChild(option);
+                        }
+                    } else {
+                        console.error('Source select element not found!');
+                    }
+                    
+                    // Set default date to today
+                    const paymentDateInput = document.getElementById('paymentDate');
+                    if (paymentDateInput) {
+                        paymentDateInput.value = new Date().toISOString().split('T')[0];
+                    }
+                    
+                    // Pre-select loan if provided
+                    const loanId = addLoanPaymentModal.dataset.loanId;
+                    if (loanId && loanSelect) {
+                        loanSelect.value = loanId;
+                    }
+                    
+                    const saveLoanPaymentBtn = document.getElementById('saveLoanPaymentBtn');
+                    if (saveLoanPaymentBtn) {
+                        // Remove previous listeners to avoid duplicates
+                        const newBtn = saveLoanPaymentBtn.cloneNode(true);
+                        saveLoanPaymentBtn.parentNode.replaceChild(newBtn, saveLoanPaymentBtn);
+                        newBtn.addEventListener('click', saveLoanPayment);
+                    }
+                });
+            } else {
+                console.error('addLoanPaymentModal not found!');
+            }
         }
 
 
@@ -288,6 +406,13 @@
                 if (typeof window.loadTransactions === 'function') {
                     const month = window.currentMonth || new Date().getMonth() + 1;
                     window.loadTransactions(month);
+                }
+            } else if (tabName === 'loans') {
+                if (typeof window.loadLoans === 'function') {
+                    window.loadLoans();
+                }
+                if (typeof window.loadLoanSummary === 'function') {
+                    window.loadLoanSummary();
                 }
             }
         }

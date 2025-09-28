@@ -180,7 +180,7 @@ async def delete_transaction(
         )
     
     # Delete the transaction
-    if not db.delete_transaction(transaction_id):
+    if not db.delete_transaction(transaction_id, current_user[0]):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete transaction"

@@ -294,4 +294,55 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="d-flex align-items-center">
+                    <div class="delete-icon-container me-3">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                    </div>
+                    <h5 class="modal-title text-danger" id="deleteConfirmationModalLabel">
+                        Confirm Deletion
+                    </h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <div class="alert alert-warning d-flex align-items-center mb-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <div>
+                        <strong>Warning!</strong> This action cannot be undone.
+                    </div>
+                </div>
+                <p class="mb-3">Are you sure you want to delete this transaction?</p>
+                <div class="transaction-preview bg-light p-3 rounded">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1" id="deleteTransactionName">Transaction Name</h6>
+                            <small class="text-muted" id="deleteTransactionDate">Date</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary" id="deleteTransactionAmount">$0.00</span>
+                            <br>
+                            <small class="text-muted" id="deleteTransactionType">Type</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>
+                    Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-1"></i>
+                    Delete Transaction
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

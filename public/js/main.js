@@ -99,6 +99,10 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             addLoanPayment();
         }
+        if (e.target && e.target.id === 'confirmDeleteBtn') {
+            e.preventDefault();
+            confirmDeleteTransaction();
+        }
     });
 
     // Add event listener for currency change in loan modal
@@ -1085,9 +1089,39 @@ function deleteTransaction(transactionId) {
         return;
     }
     
-    // Show confirmation dialog
-    const confirmDelete = confirm(`Are you sure you want to delete "${transaction.name}"?`);
-    if (!confirmDelete) {
+    // Show custom confirmation modal
+    showDeleteConfirmationModal(transaction);
+}
+
+// Show custom delete confirmation modal
+function showDeleteConfirmationModal(transaction) {
+    // Populate modal with transaction data
+    document.getElementById('deleteTransactionName').textContent = transaction.name;
+    document.getElementById('deleteTransactionDate').textContent = new Date(transaction.date).toLocaleDateString();
+    
+    // Format amount based on currency
+    const amount = Math.abs(transaction.price);
+    const currency = transaction.is_usd ? '$' : 'T';
+    const formattedAmount = transaction.is_usd ? 
+        `$${amount.toFixed(2)}` : 
+        `${amount.toLocaleString()} T`;
+    
+    document.getElementById('deleteTransactionAmount').textContent = formattedAmount;
+    document.getElementById('deleteTransactionType').textContent = transaction.is_deposit ? 'Income' : 'Expense';
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
+    modal.show();
+    
+    // Store transaction ID for deletion
+    window.pendingDeleteTransactionId = transaction.id;
+}
+
+// Confirm delete transaction
+function confirmDeleteTransaction() {
+    const transactionId = window.pendingDeleteTransactionId;
+    if (!transactionId) {
+        showErrorToast('No transaction selected for deletion');
         return;
     }
     
@@ -1115,6 +1149,12 @@ function deleteTransaction(transactionId) {
     .then(data => {
         console.log('Transaction deleted:', data);
         
+        // Close the delete confirmation modal
+        const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmationModal'));
+        if (deleteModal) {
+            deleteModal.hide();
+        }
+        
         // Remove from allTransactions array
         allTransactions = allTransactions.filter(tx => tx.id !== transactionId);
         
@@ -1130,6 +1170,8 @@ function deleteTransaction(transactionId) {
     })
     .finally(() => {
         hideLoadingOverlay();
+        // Clear pending delete
+        window.pendingDeleteTransactionId = null;
     });
 }
 
@@ -1762,30 +1804,6 @@ async function saveEditedTransaction() {
     }
 }
 
-function deleteTransaction(transactionId) {
-    if (!confirm('Are you sure you want to delete this transaction?')) {
-        return;
-    }
-    
-    fetchWithAuth(`/api/transactions/${transactionId}`, {
-        method: 'DELETE'
-    })
-    .then(response => {
-        if (response.ok) {
-            // Reload transactions
-            const month = window.currentMonth || new Date().getMonth() + 1;
-            loadTransactions(month);
-        } else {
-            return response.json().then(data => {
-                showErrorToast('Error deleting transaction: ' + (data.detail || 'Unknown error'));
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error deleting transaction:', error);
-        showErrorToast('Error deleting transaction');
-    });
-}
 
 // Logout functionality
 function logout() {

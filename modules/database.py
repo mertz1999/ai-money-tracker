@@ -455,6 +455,28 @@ class Database:
             self.update_source_balance(source_id, abs(price), your_currency_rate, is_deposit)
             return cursor.rowcount > 0 
 
+    def delete_transaction(self, transaction_id, user_id):
+        """Delete a transaction by its ID and update the source balance"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            # Fetch transaction data before deletion
+            cursor.execute("SELECT price_in_dollar, your_currency_rate, source_id, is_deposit FROM transactions WHERE id = ? AND user_id = ?", (transaction_id, user_id))
+            transaction = cursor.fetchone()
+            if not transaction:
+                return False
+            
+            price, rate, source_id, is_deposit = transaction
+            
+            # Delete the transaction
+            cursor.execute("DELETE FROM transactions WHERE id = ? AND user_id = ?", (transaction_id, user_id))
+            conn.commit()
+            
+            if cursor.rowcount > 0:
+                # Revert the source balance effect (invert is_deposit)
+                self.update_source_balance(source_id, abs(price), rate, not is_deposit)
+                return True
+            return False
+
     # Loan management methods
     def add_loan(self, name, total_amount, monthly_payment, is_usd, user_id):
         """Add a new loan"""

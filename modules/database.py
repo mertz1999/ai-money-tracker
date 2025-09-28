@@ -1,11 +1,34 @@
 import sqlite3
 from datetime import datetime
 from modules.currency_exchange import CurrencyExchange
+import jdatetime
 
 class Database:
     def __init__(self, db_name="money_tracker.db"):
         self.db_name = db_name
         self.create_tables()
+    
+    def get_current_persian_date(self):
+        """Get current date in Persian calendar format (YYYY-MM-DD)"""
+        return jdatetime.datetime.now().strftime('%Y-%m-%d')
+    
+    def get_current_persian_datetime(self):
+        """Get current datetime in Persian calendar format"""
+        return jdatetime.datetime.now().isoformat()
+    
+    def convert_gregorian_to_persian(self, gregorian_date):
+        """Convert Gregorian date to Persian date"""
+        if isinstance(gregorian_date, str):
+            gregorian_date = datetime.strptime(gregorian_date, '%Y-%m-%d')
+        persian_date = jdatetime.datetime.fromgregorian(date=gregorian_date)
+        return persian_date.strftime('%Y-%m-%d')
+    
+    def convert_persian_to_gregorian(self, persian_date):
+        """Convert Persian date to Gregorian date"""
+        if isinstance(persian_date, str):
+            persian_date = jdatetime.datetime.strptime(persian_date, '%Y-%m-%d')
+        gregorian_date = persian_date.togregorian()
+        return gregorian_date.strftime('%Y-%m-%d')
 
     def get_connection(self):
         """Get a new connection to the SQLite database"""
@@ -133,7 +156,7 @@ class Database:
                 cursor.execute(
                     """INSERT INTO users (username, email, password_hash, created_at)
                        VALUES (?, ?, ?, ?)""",
-                    (username, email, password_hash, datetime.now().isoformat())
+                    (username, email, password_hash, self.get_current_persian_datetime())
                 )
                 user_id = cursor.lastrowid
                 conn.commit()
@@ -339,7 +362,7 @@ class Database:
             cursor = conn.cursor()
             
             if month is not None:
-                year = datetime.now().year
+                year = jdatetime.datetime.now().year
                 start_date = f"{year}-{month:02d}-01"
                 end_date = f"{year}-{month + 1:02d}-01" if month < 12 else f"{year + 1}-01-01"
                 
@@ -487,7 +510,7 @@ class Database:
                     """INSERT INTO loans 
                        (name, total_amount, monthly_payment, interest_rate, start_date, end_date, remaining_amount, is_usd, user_id, created_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (name, total_amount, monthly_payment, 0.0, datetime.now().isoformat().split('T')[0], None, total_amount, is_usd, user_id, datetime.now().isoformat())
+                    (name, total_amount, monthly_payment, 0.0, self.get_current_persian_date(), None, total_amount, is_usd, user_id, self.get_current_persian_datetime())
                 )
                 loan_id = cursor.lastrowid
                 conn.commit()
@@ -529,7 +552,7 @@ class Database:
                     """INSERT INTO loan_payments 
                        (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, created_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, datetime.now().isoformat())
+                    (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, self.get_current_persian_datetime())
                 )
                 payment_id = cursor.lastrowid
                 conn.commit()

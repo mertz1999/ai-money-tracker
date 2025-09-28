@@ -2,7 +2,7 @@
 <div class="card">
     <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">Loans</h5>
+            <h5 class="card-title mb-0">وام‌ها</h5>
             <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addLoanModal">
                 <i class="fas fa-plus"></i>
             </button>
@@ -13,17 +13,17 @@
                 <button class="btn btn-sm btn-outline-secondary loan-currency-toggle active" 
                         data-mode="default" 
                         onclick="toggleLoanDisplayMode('default')">
-                    Default
+                    پیش‌فرض
                 </button>
                 <button class="btn btn-sm btn-outline-secondary loan-currency-toggle" 
                         data-mode="usd" 
                         onclick="toggleLoanDisplayMode('usd')">
-                    USD
+                    دلار
                 </button>
                 <button class="btn btn-sm btn-outline-secondary loan-currency-toggle" 
                         data-mode="toman" 
                         onclick="toggleLoanDisplayMode('toman')">
-                    Toman
+                    تومان
                 </button>
             </div>
         </div>
@@ -39,12 +39,12 @@
             <table class="table loans-table" id="loans-table">
                 <thead>
                     <tr>
-                        <th>Loan Name</th>
-                        <th>Total Amount</th>
-                        <th>Monthly Payment</th>
-                        <th>Remaining</th>
-                        <th>Progress</th>
-                        <th>Actions</th>
+                        <th>نام وام</th>
+                        <th>مبلغ کل</th>
+                        <th>پرداخت ماهانه</th>
+                        <th>باقی‌مانده</th>
+                        <th>پیشرفت</th>
+                        <th>عملیات</th>
                     </tr>
                 </thead>
                 <tbody>

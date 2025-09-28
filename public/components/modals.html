@@ -5,7 +5,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="addTransactionModalLabel">
                     <i class="fas fa-plus-circle me-2"></i>
-                    Add Transaction
+                    افزودن تراکنش
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -15,19 +15,19 @@
                     <div class="ai-input-section mb-4">
                         <label for="transactionDescription" class="form-label">
                             <i class="fas fa-robot me-1"></i>
-                            Describe your transaction
+                            تراکنش خود را توصیف کنید
                         </label>
                         <textarea class="form-control" id="transactionDescription" rows="3" 
-                                  placeholder="e.g., 'I spent $50 on groceries at Walmart' or 'Received $2000 salary'"></textarea>
+                                  placeholder="مثال: '50 دلار برای خرید مواد غذایی از والمارت خرج کردم' یا '2000 دلار حقوق دریافت کردم'"></textarea>
                         <small class="form-text text-muted">
                             <i class="fas fa-magic me-1"></i>
-                            Our AI will automatically extract the details
+                            هوش مصنوعی ما به طور خودکار جزئیات را استخراج می‌کند
                         </small>
                         <div class="mt-2">
                             <button type="button" class="btn btn-outline-primary w-100" id="parseTransactionBtn">
                                 <span class="button-text">
                                     <i class="fas fa-magic me-2"></i>
-                                    Parse with AI
+                                    تجزیه با هوش مصنوعی
                                 </span>
                                 <div class="spinner-border spinner-border-sm d-none" role="status">
                                     <span class="visually-hidden">Loading...</span>
@@ -40,13 +40,13 @@
                     <div id="transactionFields">
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label for="transactionType" class="form-label">Transaction Type</label>
+                                <label for="transactionType" class="form-label">نوع تراکنش</label>
                                 <select class="form-select form-select-lg" id="transactionType">
                                     <option value="expense">
-                                        <i class="fas fa-minus-circle me-2"></i>Expense
+                                        <i class="fas fa-minus-circle me-2"></i>هزینه
                                     </option>
                                     <option value="income">
-                                        <i class="fas fa-plus-circle me-2"></i>Income
+                                        <i class="fas fa-plus-circle me-2"></i>درآمد
                                     </option>
                                 </select>
                             </div>
@@ -54,29 +54,29 @@
 
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label for="transactionName" class="form-label">Transaction Name</label>
+                                <label for="transactionName" class="form-label">نام تراکنش</label>
                                 <input type="text" class="form-control form-control-lg" id="transactionName" 
-                                       placeholder="Enter transaction name">
+                                       placeholder="نام تراکنش را وارد کنید">
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-6 mb-3">
-                                <label for="transactionDate" class="form-label">Date</label>
+                                <label for="transactionDate" class="form-label">تاریخ</label>
                                 <input type="date" class="form-control form-control-lg" id="transactionDate">
                             </div>
                             <div class="col-6 mb-3">
-                                <label for="transactionCurrency" class="form-label">Currency</label>
+                                <label for="transactionCurrency" class="form-label">ارز</label>
                                 <select class="form-select form-select-lg" id="transactionCurrency">
-                                    <option value="true">USD ($)</option>
-                                    <option value="false">Toman (T)</option>
+                                    <option value="true">دلار ($)</option>
+                                    <option value="false">تومان (ت)</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label for="transactionAmount" class="form-label">Amount</label>
+                                <label for="transactionAmount" class="form-label">مبلغ</label>
                                 <div class="input-group input-group-lg">
                                     <span class="input-group-text" id="amountCurrency">$</span>
                                     <input type="number" class="form-control" id="transactionAmount" 
@@ -87,7 +87,7 @@
 
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label for="transactionCategory" class="form-label">Category</label>
+                                <label for="transactionCategory" class="form-label">دسته‌بندی</label>
                                 <select class="form-select form-select-lg" id="transactionCategory">
                                     <!-- Categories will be loaded dynamically -->
                                 </select>
@@ -96,7 +96,7 @@
 
                         <div class="row">
                             <div class="col-12 mb-3">
-                                <label for="transactionSource" class="form-label">Source</label>
+                                <label for="transactionSource" class="form-label">منبع</label>
                                 <select class="form-select form-select-lg" id="transactionSource">
                                     <!-- Sources will be loaded dynamically -->
                                 </select>
@@ -108,11 +108,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>
-                    Cancel
+                    لغو
                 </button>
                 <button type="button" class="btn btn-primary" id="saveTransactionBtn">
                     <i class="fas fa-save me-1"></i>
-                    Save Transaction
+                    ذخیره تراکنش
                 </button>
             </div>
         </div>
@@ -126,7 +126,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="addSourceModalLabel">
                     <i class="fas fa-wallet me-2"></i>
-                    Add Source
+                    افزودن منبع
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -134,36 +134,36 @@
                 <form id="addSourceForm">
                     <div class="row">
                         <div class="col-12 mb-3">
-                            <label for="sourceName" class="form-label">Source Name</label>
+                            <label for="sourceName" class="form-label">نام منبع</label>
                             <input type="text" class="form-control form-control-lg" id="sourceName" 
-                                   placeholder="e.g., Bank Account, Cash, Credit Card">
+                                   placeholder="مثال: حساب بانکی، نقد، کارت اعتباری">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-6 mb-3">
-                            <label for="sourceType" class="form-label">Type</label>
+                            <label for="sourceType" class="form-label">نوع</label>
                             <select class="form-select form-select-lg" id="sourceType">
                                 <option value="true">
-                                    <i class="fas fa-university me-2"></i>Bank
+                                    <i class="fas fa-university me-2"></i>بانک
                                 </option>
                                 <option value="false">
-                                    <i class="fas fa-wallet me-2"></i>Cash
+                                    <i class="fas fa-wallet me-2"></i>نقد
                                 </option>
                             </select>
                         </div>
                         <div class="col-6 mb-3">
-                            <label for="sourceCurrency" class="form-label">Currency</label>
+                            <label for="sourceCurrency" class="form-label">ارز</label>
                             <select class="form-select form-select-lg" id="sourceCurrency">
-                                <option value="true">USD ($)</option>
-                                <option value="false">Toman (T)</option>
+                                <option value="true">دلار ($)</option>
+                                <option value="false">تومان (ت)</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-12 mb-3">
-                            <label for="sourceValue" class="form-label">Initial Balance</label>
+                            <label for="sourceValue" class="form-label">موجودی اولیه</label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text" id="sourceValueCurrency">$</span>
                                 <input type="number" class="form-control" id="sourceValue" 
@@ -171,7 +171,7 @@
                             </div>
                             <small class="form-text text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Enter the current balance in this source
+                                موجودی فعلی این منبع را وارد کنید
                             </small>
                         </div>
                     </div>
@@ -180,11 +180,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>
-                    Cancel
+                    لغو
                 </button>
                 <button type="button" class="btn btn-primary" id="saveSourceBtn">
                     <i class="fas fa-save me-1"></i>
-                    Save Source
+                    ذخیره منبع
                 </button>
             </div>
         </div>

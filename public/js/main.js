@@ -1,3 +1,60 @@
+// Persian Calendar Utilities
+function getCurrentPersianDate() {
+    return moment().format('jYYYY/jMM/jDD');
+}
+
+function getCurrentPersianDateTime() {
+    return moment().format('jYYYY/jMM/jDD HH:mm');
+}
+
+function convertToPersianDate(gregorianDate) {
+    if (!gregorianDate) return '';
+    return moment(gregorianDate).format('jYYYY/jMM/jDD');
+}
+
+function convertToGregorianDate(persianDate) {
+    if (!persianDate) return '';
+    return moment(persianDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
+}
+
+function formatPersianDate(date, format = 'jYYYY/jMM/jDD') {
+    if (!date) return '';
+    return moment(date).format(format);
+}
+
+function getPersianMonthName(month) {
+    const months = [
+        'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+        'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'
+    ];
+    return months[month - 1] || '';
+}
+
+function getPersianDayName(day) {
+    const days = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+    return days[day] || '';
+}
+
+// Set default date inputs to Persian calendar
+function setPersianDateInputs() {
+    // Set today's date in Persian format for date inputs
+    const today = getCurrentPersianDate();
+    
+    // Update all date inputs to use Persian calendar
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        // Convert Persian date to Gregorian for HTML date input
+        const gregorianDate = convertToGregorianDate(today);
+        input.value = gregorianDate;
+        
+        // Add Persian date display
+        const persianDisplay = document.createElement('small');
+        persianDisplay.className = 'form-text text-muted persian-date-display';
+        persianDisplay.textContent = `تاریخ شمسی: ${today}`;
+        input.parentNode.appendChild(persianDisplay);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listener for transaction modal
@@ -12,6 +69,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (addTransactionForm) {
                 addTransactionForm.reset();
             }
+            
+            // Set today's date in Persian calendar
+            const today = getCurrentPersianDate();
+            const gregorianToday = convertToGregorianDate(today);
+            document.getElementById('transactionDate').value = gregorianToday;
             // Hide parsed details section by default
             const parsedDetails = document.getElementById('parsedTransactionDetails');
             if (parsedDetails) {
@@ -452,7 +514,7 @@ function parseTransactionDescription() {
     })
     .catch(error => {
         console.error('Error parsing transaction:', error);
-        showErrorToast('Failed to parse transaction. Please try again or fill the form manually.');
+        showErrorToast('تجزیه تراکنش ناموفق بود. لطفاً دوباره تلاش کنید یا فرم را دستی پر کنید.');
     })
     .finally(() => {
         // Reset button state
@@ -506,7 +568,7 @@ function saveTransaction() {
     
     if (!cat || !src) {
         console.error('Category or source not found:', { cat, src, category_name, source_name });
-        showErrorToast('Invalid category or source. Please make sure categories and sources are loaded.');
+        showErrorToast('دسته‌بندی یا منبع نامعتبر است. لطفاً مطمئن شوید که دسته‌بندی‌ها و منابع بارگذاری شده‌اند.');
         return;
     }
 
@@ -584,7 +646,7 @@ function saveTransaction() {
     })
     .catch(error => {
         console.error('Error saving transaction:', error);
-        showErrorToast(error.message || 'Failed to save transaction. Please try again.');
+        showErrorToast(error.message || 'ذخیره تراکنش ناموفق بود. لطفاً دوباره تلاش کنید.');
     })
     .finally(() => {
         // Reset button state
@@ -652,7 +714,7 @@ function saveSource() {
         loadSources();
         
         // Show success message
-        showSuccessToast('Source added successfully!');
+        showSuccessToast('منبع با موفقیت اضافه شد!');
     })
     .catch(error => {
         console.error('Error saving source:', error);
@@ -750,7 +812,7 @@ function updateSourcesTable(sources) {
                         </div>
                     </div>
                 </td>
-                <td>${source.bank ? 'Bank' : 'Cash'}</td>
+                <td>${source.bank ? 'بانک' : 'نقد'}</td>
                 <td class="source-value" 
                     data-usd="${valueInUSD.toFixed(2)}"
                     data-toman="${valueInToman.toLocaleString()}"
@@ -806,7 +868,7 @@ function createSourceCard(source) {
         </div>
         <div class="table-row-content">
             <h6 class="table-row-title">${source.name}</h6>
-            <p class="table-row-subtitle">${source.bank ? 'Bank Account' : 'Cash'}</p>
+            <p class="table-row-subtitle">${source.bank ? 'حساب بانکی' : 'نقد'}</p>
         </div>
         <div class="table-row-value source-value" 
              data-usd="${valueInUSD.toFixed(2)}"
@@ -936,10 +998,10 @@ function updateTransactionsTable(page = 1) {
                     </div>
                 </td>
                 <td>${categoryName}</td>
-                <td>${new Date(tx.date).toLocaleDateString()}</td>
+                <td class="transaction-date-persian">${convertToPersianDate(tx.date)}</td>
                 <td>
                     <span class="badge ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
-                        ${tx.is_deposit ? 'Deposit' : 'Expense'}
+                        ${tx.is_deposit ? 'درآمد' : 'هزینه'}
                     </span>
                 </td>
                 <td class="amount-cell ${tx.is_deposit ? 'text-success' : 'text-danger'}" 
@@ -1035,10 +1097,10 @@ function createTransactionCard(tx) {
         <div class="table-row-content">
             <h6 class="table-row-title ${nameClass}">${tx.name}</h6>
             <p class="table-row-subtitle">
-                ${categoryName} • ${new Date(tx.date).toLocaleDateString()}
+                ${categoryName} • <span class="transaction-date-persian">${convertToPersianDate(tx.date)}</span>
             </p>
             <span class="badge ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
-                ${tx.is_deposit ? 'Income' : 'Expense'}
+                ${tx.is_deposit ? 'درآمد' : 'هزینه'}
             </span>
         </div>
         <div class="table-row-value amount-cell ${amountClass}" 
@@ -1097,7 +1159,7 @@ function deleteTransaction(transactionId) {
 function showDeleteConfirmationModal(transaction) {
     // Populate modal with transaction data
     document.getElementById('deleteTransactionName').textContent = transaction.name;
-    document.getElementById('deleteTransactionDate').textContent = new Date(transaction.date).toLocaleDateString();
+    document.getElementById('deleteTransactionDate').innerHTML = `<span class="transaction-date-persian">${convertToPersianDate(transaction.date)}</span>`;
     
     // Format amount based on currency
     const amount = Math.abs(transaction.price);
@@ -1107,7 +1169,7 @@ function showDeleteConfirmationModal(transaction) {
         `${amount.toLocaleString()} T`;
     
     document.getElementById('deleteTransactionAmount').textContent = formattedAmount;
-    document.getElementById('deleteTransactionType').textContent = transaction.is_deposit ? 'Income' : 'Expense';
+    document.getElementById('deleteTransactionType').textContent = transaction.is_deposit ? 'درآمد' : 'هزینه';
     
     // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('deleteConfirmationModal'));
@@ -1162,7 +1224,7 @@ function confirmDeleteTransaction() {
         updateTransactionsTable(currentPage);
         loadSources(); // Refresh sources to update balances
         
-        showSuccessToast('Transaction deleted successfully');
+        showSuccessToast('تراکنش با موفقیت حذف شد');
     })
     .catch(error => {
         console.error('Error deleting transaction:', error);
@@ -1284,7 +1346,7 @@ function saveEditedTransaction() {
         updateTransactionsTable(currentPage);
         loadSources(); // Refresh sources to update balances
         
-        showSuccessToast('Transaction updated successfully');
+        showSuccessToast('تراکنش با موفقیت به‌روزرسانی شد');
     })
     .catch(error => {
         console.error('Error updating transaction:', error);
@@ -2005,7 +2067,7 @@ function updateLoansTable(loans) {
                             </div>
                             <div class="ms-3">
                                 <h6 class="mb-0">${loan.name}</h6>
-                                <small class="text-muted">Monthly: ${monthlyPayment}</small>
+                                <small class="text-muted">ماهانه: ${monthlyPayment}</small>
                             </div>
                         </div>
                     </td>
@@ -2074,7 +2136,7 @@ function createLoanCard(loan) {
         <div class="table-row-content">
             <h6 class="table-row-title">${loan.name}</h6>
             <p class="table-row-subtitle">
-                Monthly: ${monthlyPayment} • ${progress.toFixed(1)}% paid
+                ماهانه: ${monthlyPayment} • ${progress.toFixed(1)}% پرداخت شده
             </p>
             <div class="progress mb-2" style="height: 4px;">
                 <div class="progress-bar bg-success" role="progressbar" 
@@ -2331,7 +2393,7 @@ function viewLoanDetails(loanId) {
     // Find the loan
     const loan = allLoans.find(l => l.id === loanId);
     if (!loan) {
-        showErrorToast('Loan not found');
+        showErrorToast('وام یافت نشد');
         return;
     }
     
@@ -2343,16 +2405,16 @@ function viewLoanDetails(loanId) {
         detailsContent.innerHTML = `
             <div class="row">
                 <div class="col-md-6">
-                    <h6>Loan Information</h6>
-                    <p><strong>Name:</strong> ${loan.name}</p>
-                    <p><strong>Total Amount:</strong> ${formatLoanAmount(loan.total_amount, loan.is_usd)}</p>
-                    <p><strong>Monthly Payment:</strong> ${formatLoanAmount(loan.monthly_payment, loan.is_usd)}</p>
+                    <h6>اطلاعات وام</h6>
+                    <p><strong>نام:</strong> ${loan.name}</p>
+                    <p><strong>مبلغ کل:</strong> ${formatLoanAmount(loan.total_amount, loan.is_usd)}</p>
+                    <p><strong>پرداخت ماهانه:</strong> ${formatLoanAmount(loan.monthly_payment, loan.is_usd)}</p>
                 </div>
                 <div class="col-md-6">
-                    <h6>Payment Status</h6>
-                    <p><strong>Remaining Amount:</strong> ${formatLoanAmount(loan.remaining_amount, loan.is_usd)}</p>
-                    <p><strong>Amount Paid:</strong> ${formatLoanAmount(loan.total_amount - loan.remaining_amount, loan.is_usd)}</p>
-                    <p><strong>Progress:</strong> ${progress.toFixed(1)}%</p>
+                    <h6>وضعیت پرداخت</h6>
+                    <p><strong>مبلغ باقی‌مانده:</strong> ${formatLoanAmount(loan.remaining_amount, loan.is_usd)}</p>
+                    <p><strong>مبلغ پرداخت شده:</strong> ${formatLoanAmount(loan.total_amount - loan.remaining_amount, loan.is_usd)}</p>
+                    <p><strong>پیشرفت:</strong> ${progress.toFixed(1)}%</p>
                     <div class="progress mb-3">
                         <div class="progress-bar bg-success" role="progressbar" 
                              style="width: ${progress.toFixed(1)}%">
@@ -2371,7 +2433,7 @@ function viewLoanDetails(loanId) {
 function deleteLoan(loanId) {
     const loan = allLoans.find(l => l.id === loanId);
     if (!loan) {
-        showErrorToast('Loan not found');
+        showErrorToast('وام یافت نشد');
         return;
     }
     

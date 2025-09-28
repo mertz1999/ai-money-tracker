@@ -5,7 +5,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="addLoanModalLabel">
                     <i class="fas fa-hand-holding-usd me-2"></i>
-                    Add Loan
+                    افزودن وام
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -15,10 +15,10 @@
                         <div class="col-12 mb-3">
                             <label for="loanName" class="form-label">
                                 <i class="fas fa-tag me-1"></i>
-                                Loan Name
+                                نام وام
                             </label>
                             <input type="text" class="form-control form-control-lg" id="loanName" 
-                                   placeholder="e.g., Car Loan, Mortgage, Personal Loan" required>
+                                   placeholder="مثال: وام خودرو، وام مسکن، وام شخصی" required>
                         </div>
                     </div>
 
@@ -26,7 +26,7 @@
                         <div class="col-6 mb-3">
                             <label for="loanTotalAmount" class="form-label">
                                 <i class="fas fa-dollar-sign me-1"></i>
-                                Total Amount
+                                مبلغ کل
                             </label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text" id="loanTotalCurrency">$</span>
@@ -37,11 +37,11 @@
                         <div class="col-6 mb-3">
                             <label for="loanCurrency" class="form-label">
                                 <i class="fas fa-coins me-1"></i>
-                                Currency
+                                ارز
                             </label>
                             <select class="form-select form-select-lg" id="loanCurrency" required>
-                                <option value="true">USD ($)</option>
-                                <option value="false">Toman (T)</option>
+                                <option value="true">دلار ($)</option>
+                                <option value="false">تومان (ت)</option>
                             </select>
                         </div>
                     </div>
@@ -50,7 +50,7 @@
                         <div class="col-12 mb-3">
                             <label for="loanMonthlyPayment" class="form-label">
                                 <i class="fas fa-calendar-alt me-1"></i>
-                                Monthly Payment
+                                پرداخت ماهانه
                             </label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text" id="loanMonthlyCurrency">$</span>
@@ -64,11 +64,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>
-                    Cancel
+                    لغو
                 </button>
                 <button type="button" class="btn btn-primary" id="saveLoanBtn">
                     <i class="fas fa-save me-1"></i>
-                    Save Loan
+                    ذخیره وام
                 </button>
             </div>
         </div>
@@ -82,7 +82,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="addLoanPaymentModalLabel">
                     <i class="fas fa-credit-card me-2"></i>
-                    Add Loan Payment
+                    افزودن پرداخت وام
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -92,7 +92,7 @@
                         <div class="col-12 mb-3">
                             <label for="paymentLoanSelect" class="form-label">
                                 <i class="fas fa-hand-holding-usd me-1"></i>
-                                Select Loan
+                                انتخاب وام
                             </label>
                             <select class="form-select form-select-lg" id="paymentLoanSelect" required>
                                 <!-- Loans will be loaded dynamically -->
@@ -104,7 +104,7 @@
                         <div class="col-12 mb-3">
                             <label for="paymentAmount" class="form-label">
                                 <i class="fas fa-dollar-sign me-1"></i>
-                                Payment Amount
+                                مبلغ پرداخت
                             </label>
                             <div class="input-group input-group-lg">
                                 <span class="input-group-text" id="paymentCurrency">$</span>
@@ -118,11 +118,11 @@
                         <div class="col-12 mb-3">
                             <label for="paymentCurrencySelect" class="form-label">
                                 <i class="fas fa-coins me-1"></i>
-                                Currency
+                                ارز
                             </label>
                             <select class="form-select form-select-lg" id="paymentCurrencySelect" required>
-                                <option value="true">USD ($)</option>
-                                <option value="false">Toman (T)</option>
+                                <option value="true">دلار ($)</option>
+                                <option value="false">تومان (ت)</option>
                             </select>
                         </div>
                     </div>
@@ -131,7 +131,7 @@
                         <div class="col-12 mb-3">
                             <label for="paymentDate" class="form-label">
                                 <i class="fas fa-calendar me-1"></i>
-                                Payment Date
+                                تاریخ پرداخت
                             </label>
                             <input type="date" class="form-control form-control-lg" id="paymentDate" required>
                         </div>
@@ -141,7 +141,7 @@
                         <div class="col-12 mb-3">
                             <label for="paymentSource" class="form-label">
                                 <i class="fas fa-wallet me-1"></i>
-                                Payment Source
+                                منبع پرداخت
                             </label>
                             <select class="form-select form-select-lg" id="paymentSource" required>
                                 <!-- Sources will be loaded dynamically -->
@@ -154,11 +154,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>
-                    Cancel
+                    لغو
                 </button>
                 <button type="button" class="btn btn-primary" id="saveLoanPaymentBtn">
                     <i class="fas fa-save me-1"></i>
-                    Save Payment
+                    ذخیره پرداخت
                 </button>
             </div>
         </div>
@@ -172,7 +172,7 @@
             <div class="modal-header">
                 <h5 class="modal-title" id="loanDetailsModalLabel">
                     <i class="fas fa-info-circle me-2"></i>
-                    Loan Details
+                    جزئیات وام
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -184,11 +184,11 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                     <i class="fas fa-times me-1"></i>
-                    Close
+                    بستن
                 </button>
                 <button type="button" class="btn btn-primary" id="addPaymentFromDetailsBtn">
                     <i class="fas fa-plus me-1"></i>
-                    Add Payment
+                    افزودن پرداخت
                 </button>
             </div>
         </div>

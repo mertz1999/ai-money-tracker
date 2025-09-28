@@ -1528,3 +1528,181 @@ body {
 #deleteConfirmationModal .btn-outline-secondary:hover {
     transform: translateY(-1px);
 }
+
+/* Persian Font and RTL Support */
+* {
+    font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif !important;
+}
+
+/* Ensure Font Awesome icons display properly */
+.fas, .far, .fab, .fa {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
+    font-weight: 900 !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+body {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+}
+
+/* Persian Calendar Styles */
+.persian-date-display {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+    margin-top: 5px;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.persian-date-input {
+    direction: rtl;
+    text-align: right;
+}
+
+.persian-date-label {
+    direction: rtl;
+    text-align: right;
+}
+
+/* Persian date in transaction tables */
+.transaction-date-persian {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+    font-size: 0.9rem;
+}
+
+/* RTL Layout Improvements */
+.app-header-content {
+    direction: rtl;
+}
+
+.header-left {
+    text-align: right;
+}
+
+.header-right {
+    text-align: left;
+}
+
+.tab-btn {
+    direction: rtl;
+    text-align: center;
+}
+
+.quick-actions {
+    direction: rtl;
+}
+
+.quick-action-btn {
+    direction: rtl;
+    text-align: center;
+}
+
+/* Form labels RTL */
+.form-label {
+    text-align: right;
+    direction: rtl;
+}
+
+/* Input groups RTL */
+.input-group {
+    direction: rtl;
+}
+
+.input-group-text {
+    border-left: 1px solid #ced4da;
+    border-right: none;
+}
+
+.form-control {
+    text-align: right;
+    direction: rtl;
+}
+
+/* Modal RTL */
+.modal-header {
+    direction: rtl;
+}
+
+.modal-title {
+    text-align: right;
+}
+
+.modal-footer {
+    direction: rtl;
+}
+
+/* Table RTL */
+.table {
+    direction: rtl;
+}
+
+.table th,
+.table td {
+    text-align: right;
+}
+
+/* Button groups RTL */
+.btn-group {
+    direction: rtl;
+}
+
+/* Card RTL */
+.card {
+    direction: rtl;
+}
+
+.card-header {
+    text-align: right;
+}
+
+.card-body {
+    text-align: right;
+}
+
+/* Icon-specific fixes */
+.btn i,
+.action-btn i,
+.tab-btn i,
+.quick-action-btn i {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    display: inline-block !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-rendering: auto !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Ensure icons don't inherit RTL direction */
+.fas, .far, .fab, .fa {
+    direction: ltr !important;
+    unicode-bidi: normal !important;
+}
+
+/* Fix icon spacing in RTL */
+.btn i + span,
+.action-btn i + span,
+.tab-btn i + span {
+    margin-right: 0.5rem;
+    margin-left: 0;
+}
+
+/* Modal icon fixes */
+.modal-title i {
+    font-family: "Font Awesome 6 Free" !important;
+    font-weight: 900 !important;
+    margin-left: 0.5rem;
+    margin-right: 0;
+}

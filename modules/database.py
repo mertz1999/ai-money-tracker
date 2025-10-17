@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 from modules.currency_exchange import CurrencyExchange
-import jdatetime
+from convertdate.persian import from_gregorian, to_gregorian
 
 class Database:
     def __init__(self, db_name="money_tracker.db"):
@@ -10,25 +10,31 @@ class Database:
     
     def get_current_persian_date(self):
         """Get current date in Persian calendar format (YYYY-MM-DD)"""
-        return jdatetime.datetime.now().strftime('%Y-%m-%d')
+        now = datetime.now()
+        persian_year, persian_month, persian_day = from_gregorian(now.year, now.month, now.day)
+        return f"{persian_year:04d}-{persian_month:02d}-{persian_day:02d}"
     
     def get_current_persian_datetime(self):
         """Get current datetime in Persian calendar format"""
-        return jdatetime.datetime.now().isoformat()
+        now = datetime.now()
+        persian_year, persian_month, persian_day = from_gregorian(now.year, now.month, now.day)
+        return f"{persian_year:04d}-{persian_month:02d}-{persian_day:02d} {now.strftime('%H:%M:%S')}"
     
     def convert_gregorian_to_persian(self, gregorian_date):
         """Convert Gregorian date to Persian date"""
         if isinstance(gregorian_date, str):
             gregorian_date = datetime.strptime(gregorian_date, '%Y-%m-%d')
-        persian_date = jdatetime.datetime.fromgregorian(date=gregorian_date)
-        return persian_date.strftime('%Y-%m-%d')
+        persian_year, persian_month, persian_day = from_gregorian(gregorian_date.year, gregorian_date.month, gregorian_date.day)
+        return f"{persian_year:04d}-{persian_month:02d}-{persian_day:02d}"
     
     def convert_persian_to_gregorian(self, persian_date):
         """Convert Persian date to Gregorian date"""
         if isinstance(persian_date, str):
-            persian_date = jdatetime.datetime.strptime(persian_date, '%Y-%m-%d')
-        gregorian_date = persian_date.togregorian()
-        return gregorian_date.strftime('%Y-%m-%d')
+            year, month, day = map(int, persian_date.split('-'))
+        else:
+            year, month, day = persian_date
+        gregorian_year, gregorian_month, gregorian_day = to_gregorian(year, month, day)
+        return f"{gregorian_year:04d}-{gregorian_month:02d}-{gregorian_day:02d}"
 
     def get_connection(self):
         """Get a new connection to the SQLite database"""
@@ -156,7 +162,7 @@ class Database:
                 cursor.execute(
                     """INSERT INTO users (username, email, password_hash, created_at)
                        VALUES (?, ?, ?, ?)""",
-                    (username, email, password_hash, self.get_current_persian_datetime())
+                    (username, email, password_hash, datetime.now().isoformat())
                 )
                 user_id = cursor.lastrowid
                 conn.commit()
@@ -356,19 +362,51 @@ class Database:
             rows = cursor.fetchall()
             return [dict(zip(columns, row)) for row in rows]
 
-    def get_all_transactions(self, user_id, month=None):
-        """Get all transactions for a user, optionally filtered by month"""
+    def get_all_transactions(self, user_id, month=None, year=None):
+        """Get all transactions for a user, optionally filtered by month and year"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
             if month is not None:
-                year = jdatetime.datetime.now().year
-                start_date = f"{year}-{month:02d}-01"
-                end_date = f"{year}-{month + 1:02d}-01" if month < 12 else f"{year + 1}-01-01"
+                # Use provided year or get current Persian year
+                if year is not None:
+                    persian_year = year
+                else:
+                    now = datetime.now()
+                    persian_year, _, _ = from_gregorian(now.year, now.month, now.day)
+                
+                # Get the correct day count for Persian month
+                def get_persian_month_days(year, month):
+                    """Get the number of days in a Persian month"""
+                    if month <= 6:
+                        return 31  # First 6 months have 31 days
+                    elif month <= 11:
+                        return 30  # Next 5 months have 30 days
+                    else:  # Month 12 (Esfand)
+                        # Check if it's a leap year (29 days) or regular year (30 days)
+                        # Persian leap year: year % 4 == 3
+                        if year % 4 == 3:
+                            return 29
+                        else:
+                            return 30
+                
+                # Convert Persian month range to Gregorian for database query
+                persian_start_date = f"{persian_year:04d}-{month:02d}-01"
+                
+                # Get the last day of the current month
+                last_day = get_persian_month_days(persian_year, month)
+                persian_end_date = f"{persian_year:04d}-{month:02d}-{last_day:02d}"
+                
+                # Convert to Gregorian for database query
+                start_date = self.convert_persian_to_gregorian(persian_start_date)
+                end_date = self.convert_persian_to_gregorian(persian_end_date)
+                
+                print(f"Persian date range: {persian_start_date} to {persian_end_date}")
+                print(f"Gregorian date range: {start_date} to {end_date}")
                 
                 cursor.execute("""
                     SELECT * FROM transactions 
-                    WHERE user_id = ? AND date >= ? AND date < ?
+                    WHERE user_id = ? AND date >= ? AND date <= ?
                     ORDER BY date DESC
                 """, (user_id, start_date, end_date))
             else:
@@ -510,7 +548,7 @@ class Database:
                     """INSERT INTO loans 
                        (name, total_amount, monthly_payment, interest_rate, start_date, end_date, remaining_amount, is_usd, user_id, created_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (name, total_amount, monthly_payment, 0.0, self.get_current_persian_date(), None, total_amount, is_usd, user_id, self.get_current_persian_datetime())
+                    (name, total_amount, monthly_payment, 0.0, datetime.now().strftime('%Y-%m-%d'), None, total_amount, is_usd, user_id, datetime.now().isoformat())
                 )
                 loan_id = cursor.lastrowid
                 conn.commit()
@@ -552,7 +590,7 @@ class Database:
                     """INSERT INTO loan_payments 
                        (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, created_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                    (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, self.get_current_persian_datetime())
+                    (loan_id, amount, payment_date, source_id, is_paid, is_usd, user_id, datetime.now().isoformat())
                 )
                 payment_id = cursor.lastrowid
                 conn.commit()

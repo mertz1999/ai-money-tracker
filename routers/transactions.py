@@ -83,11 +83,12 @@ def get_parser_dependency():
 @router.get("/api/transactions", response_model=List[Transaction])
 async def get_transactions(
     month: Optional[int] = Query(None, ge=1, le=12),
+    year: Optional[int] = Query(None),
     current_user = Depends(get_current_user),
     db: Database = Depends(get_db)
 ):
-    """Get all transactions for the current user, optionally filtered by month"""
-    transactions = db.get_all_transactions(current_user[0], month)  # Pass month to DB
+    """Get all transactions for the current user, optionally filtered by month and year"""
+    transactions = db.get_all_transactions(current_user[0], month, year)  # Pass month and year to DB
     # Fetch all categories and sources for mapping
     categories = {cat[0]: cat[1] for cat in db.get_all_categories()}
     sources = {src[0]: src[1] for src in db.get_all_sources(current_user[0])}
@@ -95,7 +96,7 @@ async def get_transactions(
         {
             "id": transaction[0],
             "name": transaction[1],
-            "date": transaction[2],
+            "date": db.convert_gregorian_to_persian(transaction[2]),  # Convert Gregorian to Persian for frontend
             "price": transaction[3],
             "your_currency_rate": transaction[4],
             "is_usd": bool(sources.get(transaction[6], False)),  # fallback if source not found
@@ -129,10 +130,13 @@ async def create_transaction(
         price_in_dollar = transaction.price / usd_rate
         your_currency_rate = usd_rate
 
+    # Convert Persian date to Gregorian for database storage
+    gregorian_date = db.convert_persian_to_gregorian(transaction.date)
+    
     transaction_id = db.add_transaction(
         user_id=current_user[0],
         name=transaction.name,
-        date=transaction.date,
+        date=gregorian_date,  # Store Gregorian date in database
         price_in_dollar=price_in_dollar,
         your_currency_rate=your_currency_rate,
         category_id=transaction.category_id,
@@ -154,7 +158,7 @@ async def create_transaction(
     return {
         "id": transaction_data[0],
         "name": transaction_data[1],
-        "date": transaction_data[2],
+        "date": db.convert_gregorian_to_persian(transaction_data[2]),  # Convert Gregorian to Persian for frontend
         "price": transaction_data[3],
         "is_usd": bool(transaction_data[4]),
         "category_id": transaction_data[5],

@@ -1,41 +1,41 @@
 <!-- Transactions Management Panel -->
 <div class="container-fluid py-4" id="transactions-panel">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>Transactions (Edit Mode)</h3>
+        <h3>تراکنش‌ها (حالت ویرایش)</h3>
         <div>
-            <label for="transactionsMonth" class="form-label mb-0 me-2">Month:</label>
+            <label for="transactionsMonth" class="form-label mb-0 me-2">ماه:</label>
             <select id="transactionsMonth" class="form-select d-inline-block w-auto">
-                <option value="">All</option>
-                <option value="1">January</option>
-                <option value="2">February</option>
-                <option value="3">March</option>
-                <option value="4">April</option>
-                <option value="5">May</option>
-                <option value="6">June</option>
-                <option value="7">July</option>
-                <option value="8">August</option>
-                <option value="9">September</option>
-                <option value="10">October</option>
-                <option value="11">November</option>
-                <option value="12">December</option>
+                <option value="">همه</option>
+                <option value="1">فروردین</option>
+                <option value="2">اردیبهشت</option>
+                <option value="3">خرداد</option>
+                <option value="4">تیر</option>
+                <option value="5">مرداد</option>
+                <option value="6">شهریور</option>
+                <option value="7">مهر</option>
+                <option value="8">آبان</option>
+                <option value="9">آذر</option>
+                <option value="10">دی</option>
+                <option value="11">بهمن</option>
+                <option value="12">اسفند</option>
             </select>
-            <button class="btn btn-primary ms-2" id="loadTransactionsBtn">Load</button>
+            <button class="btn btn-primary ms-2" id="loadTransactionsBtn">بارگذاری</button>
         </div>
     </div>
     <div class="table-responsive">
         <table class="table table-bordered table-hover align-middle" id="transactionsTable">
             <thead class="table-dark">
                 <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Date</th>
-                    <th>Amount (USD)</th>
-                    <th>is_usd</th>
-                    <th>Category</th>
-                    <th>Source</th>
-                    <th>Rate</th>
-                    <th>is_deposit</th>
-                    <th>Actions</th>
+                    <th>شناسه</th>
+                    <th>نام</th>
+                    <th>تاریخ</th>
+                    <th>مبلغ (دلار)</th>
+                    <th>دلاری</th>
+                    <th>دسته‌بندی</th>
+                    <th>منبع</th>
+                    <th>نرخ</th>
+                    <th>درآمد</th>
+                    <th>عملیات</th>
                 </tr>
             </thead>
             <tbody>

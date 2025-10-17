@@ -357,12 +357,22 @@ body {
     border: 1px solid var(--gray-200);
 }
 
-.transactions-header .month-selector {
+.date-selectors {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
     flex: 1;
     min-width: 0;
 }
 
-.transactions-header .month-selector .form-select {
+.month-selector, .year-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 120px;
+}
+
+.month-selector .form-select, .year-selector .form-select {
     background: var(--bg-primary);
     color: var(--text-primary);
     border: 1px solid var(--gray-200);
@@ -371,10 +381,18 @@ body {
     font-size: 0.875rem;
 }
 
-.transactions-header .month-selector .form-select:focus {
+.month-selector .form-select:focus, .year-selector .form-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     outline: none;
+}
+
+.form-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+    text-align: right;
 }
 
 .month-selector {

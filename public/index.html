@@ -112,25 +112,38 @@
                     </div>
                     <div class="tab-pane" id="transactions-tab">
                         <div class="transactions-header">
-                            <div class="month-selector">
-                                <select id="monthSelector" class="form-select">
-                                    <option value="1">January</option>
-                                    <option value="2">February</option>
-                                    <option value="3">March</option>
-                                    <option value="4">April</option>
-                                    <option value="5">May</option>
-                                    <option value="6">June</option>
-                                    <option value="7">July</option>
-                                    <option value="8">August</option>
-                                    <option value="9">September</option>
-                                    <option value="10">October</option>
-                                    <option value="11">November</option>
-                                    <option value="12">December</option>
-                                </select>
+                            <div class="date-selectors">
+                                <div class="month-selector">
+                                    <label for="monthSelector" class="form-label">ماه:</label>
+                                    <select id="monthSelector" class="form-select">
+                                        <option value="1">فروردین</option>
+                                        <option value="2">اردیبهشت</option>
+                                        <option value="3">خرداد</option>
+                                        <option value="4">تیر</option>
+                                        <option value="5">مرداد</option>
+                                        <option value="6">شهریور</option>
+                                        <option value="7">مهر</option>
+                                        <option value="8">آبان</option>
+                                        <option value="9">آذر</option>
+                                        <option value="10">دی</option>
+                                        <option value="11">بهمن</option>
+                                        <option value="12">اسفند</option>
+                                    </select>
+                                </div>
+                                <div class="year-selector">
+                                    <label for="yearSelector" class="form-label">سال:</label>
+                                    <select id="yearSelector" class="form-select">
+                                        <option value="1402">1402</option>
+                                        <option value="1403">1403</option>
+                                        <option value="1404" selected>1404</option>
+                                        <option value="1405">1405</option>
+                                        <option value="1406">1406</option>
+                                    </select>
+                                </div>
                             </div>
                             <button class="currency-toggle-btn" id="toggleCurrencyBtn">
                                 <i class="fas fa-exchange-alt"></i>
-                                <span>Show in Toman</span>
+                                <span>نمایش به تومان</span>
                             </button>
                         </div>
                         <div id="transactions-table-container"></div>

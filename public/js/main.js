@@ -1,25 +1,94 @@
 // Persian Calendar Utilities
 function getCurrentPersianDate() {
-    return moment().format('jYYYY/jMM/jDD');
+    if (typeof moment !== 'undefined' && moment().format) {
+        return moment().format('jYYYY/jMM/jDD');
+    }
+    return '1403/10/15'; // Fallback date
 }
 
 function getCurrentPersianDateTime() {
-    return moment().format('jYYYY/jMM/jDD HH:mm');
+    if (typeof moment !== 'undefined' && moment().format) {
+        return moment().format('jYYYY/jMM/jDD HH:mm');
+    }
+    return '1403/10/15 12:00'; // Fallback datetime
 }
 
 function convertToPersianDate(gregorianDate) {
     if (!gregorianDate) return '';
-    return moment(gregorianDate).format('jYYYY/jMM/jDD');
+    
+    // Check if it's already in Persian format (contains 'j' or Persian year)
+    if (typeof gregorianDate === 'string' && (gregorianDate.includes('j') || gregorianDate.match(/^\d{4}\/\d{2}\/\d{2}$/))) {
+        return gregorianDate;
+    }
+    
+    // Try moment.js first
+    if (typeof moment !== 'undefined' && moment().format) {
+        try {
+            const persianDate = moment(gregorianDate).format('jYYYY/jMM/jDD');
+            return persianDate;
+        } catch (error) {
+            console.error('Error converting date with moment.js:', error);
+        }
+    }
+    
+    // Fallback: Use a proper Persian calendar conversion
+    try {
+        const date = new Date(gregorianDate);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        
+        // Convert Gregorian to Persian using a more accurate algorithm
+        // Persian calendar starts around March 21st (spring equinox)
+        const persianYear = year - 621;
+        let persianMonth, persianDay;
+        
+        // Persian calendar starts around March 21st (spring equinox)
+        if (month >= 3 && month <= 5) {
+            // March-May -> Farvardin-Ordibehesht (1-2)
+            persianMonth = month - 2;
+            persianDay = day;
+        } else if (month >= 6 && month <= 8) {
+            // June-August -> Khordad-Tir (3-5)
+            persianMonth = month - 2;
+            persianDay = day;
+        } else if (month >= 9 && month <= 11) {
+            // September-November -> Shahrivar-Azar (6-8)
+            persianMonth = month - 2;
+            persianDay = day;
+        } else {
+            // December-February -> Dey-Bahman (9-12)
+            persianMonth = month + 10;
+            persianDay = day;
+        }
+        
+        // Adjust for leap years and month lengths
+        if (persianMonth > 12) {
+            persianMonth -= 12;
+            persianYear += 1;
+        }
+        
+        return `${persianYear}/${persianMonth.toString().padStart(2, '0')}/${persianDay.toString().padStart(2, '0')}`;
+    } catch (error) {
+        console.error('Error in fallback conversion:', error);
+        return '1403/10/15'; // Final fallback
+    }
 }
 
 function convertToGregorianDate(persianDate) {
     if (!persianDate) return '';
-    return moment(persianDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
+    if (typeof moment !== 'undefined' && moment().format) {
+        return moment(persianDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
+    }
+    return '2024-01-01'; // Fallback
 }
 
 function formatPersianDate(date, format = 'jYYYY/jMM/jDD') {
     if (!date) return '';
-    return moment(date).format(format);
+    if (typeof moment !== 'undefined' && moment().format) {
+        return moment(date).format(format);
+    }
+    return '1403/10/15'; // Fallback
 }
 
 function getPersianMonthName(month) {
@@ -33,6 +102,88 @@ function getPersianMonthName(month) {
 function getPersianDayName(day) {
     const days = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
     return days[day] || '';
+}
+
+// Initialize Persian year dropdown
+function initializePersianYearDropdown() {
+    const yearSelect = document.getElementById('reportYear');
+    if (yearSelect) {
+        // Get current Persian year
+        let persianYear = 1404; // Default fallback
+        
+        if (typeof moment !== 'undefined' && moment().format) {
+            const currentPersianYear = moment().format('jYYYY');
+            persianYear = parseInt(currentPersianYear);
+            console.log('Using moment.js for year initialization:', persianYear);
+        } else {
+            console.log('Moment.js not available, using fallback year:', persianYear);
+        }
+        
+        // Clear existing options
+        yearSelect.innerHTML = '';
+        
+        // Add Persian years (current year and 2 years before/after)
+        for (let year = persianYear - 2; year <= persianYear + 2; year++) {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            if (year === persianYear) {
+                option.selected = true;
+            }
+            yearSelect.appendChild(option);
+        }
+        
+        console.log('Persian year dropdown initialized with year:', persianYear);
+        return true;
+    } else {
+        console.warn('reportYear dropdown not found, retrying...');
+        return false;
+    }
+}
+
+// Initialize year dropdown with retry mechanism
+function initializeYearDropdownWithRetry(maxRetries = 10) {
+    let retries = 0;
+    const tryInit = () => {
+        if (initializePersianYearDropdown()) {
+            console.log('Year dropdown initialized successfully');
+            // Also initialize the month selector to current Persian month
+            const monthSelect = document.getElementById('monthSelector');
+            if (monthSelect) {
+                let currentPersianMonth = 10; // Default fallback
+                
+                if (typeof moment !== 'undefined' && moment().format) {
+                    const monthStr = moment().format('jM');
+                    currentPersianMonth = parseInt(monthStr);
+                    console.log('Using moment.js for month initialization:', currentPersianMonth);
+                } else {
+                    console.log('Moment.js not available, using fallback month:', currentPersianMonth);
+                }
+                
+                monthSelect.value = currentPersianMonth;
+                currentMonth = currentPersianMonth;
+                console.log('Month selector set to current Persian month:', currentPersianMonth);
+            }
+        } else if (retries < maxRetries) {
+            retries++;
+            console.log(`Retrying year dropdown initialization (${retries}/${maxRetries})`);
+            setTimeout(tryInit, 200);
+        } else {
+            console.error('Failed to initialize year dropdown after maximum retries');
+        }
+    };
+    tryInit();
+}
+
+// Ensure year dropdown is ready before any transaction loading
+function ensureYearDropdownReady() {
+    const yearSelect = document.getElementById('reportYear');
+    if (!yearSelect || !yearSelect.value || isNaN(parseInt(yearSelect.value))) {
+        console.log('Year dropdown not ready, initializing...');
+        initializePersianYearDropdown();
+        return false;
+    }
+    return true;
 }
 
 // Set default date inputs to Persian calendar
@@ -57,6 +208,14 @@ function setPersianDateInputs() {
 
 document.addEventListener('DOMContentLoaded', function() {
     
+    // Initialize Persian year dropdown with retry mechanism
+    initializeYearDropdownWithRetry();
+    
+    // Also ensure year dropdown is ready after a delay
+    setTimeout(() => {
+        ensureYearDropdownReady();
+    }, 500);
+    
     // Add event listener for transaction modal
     const addTransactionModal = document.getElementById('addTransactionModal');
     if (addTransactionModal) {
@@ -72,6 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Set today's date in Persian calendar
             const today = getCurrentPersianDate();
+            // Convert Persian date to Gregorian for HTML date input
             const gregorianToday = convertToGregorianDate(today);
             document.getElementById('transactionDate').value = gregorianToday;
             // Hide parsed details section by default
@@ -375,7 +535,26 @@ async function loadSources() {
 
 // Add global state for currency displays
 let displayInUSD = true;
-let currentMonth = new Date().getMonth() + 1; // 1-12
+let currentMonth = 10; // Default fallback Persian month
+let currentYear = 1404; // Default fallback Persian year
+
+// Try to get current Persian month from moment.js
+if (typeof moment !== 'undefined' && moment().format) {
+    const monthStr = moment().format('jM');
+    currentMonth = parseInt(monthStr);
+    console.log('Initialized currentMonth with moment.js:', currentMonth);
+} else {
+    console.log('Moment.js not available, using fallback currentMonth:', currentMonth);
+}
+
+// Try to get current Persian year from moment.js
+if (typeof moment !== 'undefined' && moment().format) {
+    const yearStr = moment().format('jYYYY');
+    currentYear = parseInt(yearStr);
+    console.log('Initialized currentYear with moment.js:', currentYear);
+} else {
+    console.log('Moment.js not available, using fallback currentYear:', currentYear);
+}
 let currentPage = 1;
 const itemsPerPage = 5;
 let allTransactions = []; // Store all transactions
@@ -383,11 +562,42 @@ let currentExchangeRate = null;
 let sourceDisplayMode = 'default'; // 'default', 'usd', or 'toman'
 
 // Load transactions from API
-async function loadTransactions(month = currentMonth) {
+async function loadTransactions(month = currentMonth, year = currentYear) {
     if (!checkAuth()) return;
     
     try {
-        const response = await fetchWithAuth(`/api/transactions?month=${month}`);
+        console.log('loadTransactions called with:', { month, year, currentMonth });
+        
+        // Ensure year dropdown is ready
+        ensureYearDropdownReady();
+        
+        // Force valid values - no more NaN
+        if (!year || isNaN(year) || year === 'NaN') {
+            year = 1404; // Always use fallback year
+            console.log('Forced year to fallback value:', year);
+        }
+        
+        if (!month || isNaN(month) || month === 'NaN') {
+            month = 10; // Always use fallback month
+            console.log('Forced month to fallback value:', month);
+        }
+        
+        // Convert to numbers to be absolutely sure
+        year = Number(year);
+        month = Number(month);
+        
+        console.log('Final values before API call:', { month, year, monthType: typeof month, yearType: typeof year });
+        
+        // Final validation - should never be NaN now
+        if (isNaN(year) || isNaN(month)) {
+            console.error('CRITICAL: Values are still NaN after forced fallbacks!', { month, year });
+            year = 1404;
+            month = 10;
+            console.log('Emergency fallback applied:', { month, year });
+        }
+        
+        console.log('Loading transactions for month:', month, 'year:', year);
+        const response = await fetchWithAuth(`/api/transactions?month=${month}&year=${year}`);
         if (response.ok) {
             const transactions = await response.json();
             // Store all transactions
@@ -530,7 +740,8 @@ function saveTransaction() {
     
     // Get form values
     const name = document.getElementById('transactionName').value;
-    const date = document.getElementById('transactionDate').value;
+    const gregorianDate = document.getElementById('transactionDate').value;
+    const date = convertToPersianDate(gregorianDate); // Convert Gregorian input to Persian for backend
     const price = parseFloat(document.getElementById('transactionAmount').value);
     const is_usd = document.getElementById('transactionCurrency').value === 'true';
     const category_name = document.getElementById('transactionCategory').value;
@@ -930,6 +1141,7 @@ function updateTransactionsTable(page = 1) {
     // Get current page transactions
     const currentTransactions = allTransactions.slice(startIndex, endIndex);
     
+    
     // Update mobile transactions list
     if (transactionsList) {
         transactionsList.innerHTML = '';
@@ -998,7 +1210,7 @@ function updateTransactionsTable(page = 1) {
                     </div>
                 </td>
                 <td>${categoryName}</td>
-                <td class="transaction-date-persian">${convertToPersianDate(tx.date)}</td>
+                <td class="transaction-date-persian">${tx.date}</td>
                 <td>
                     <span class="badge ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
                         ${tx.is_deposit ? 'درآمد' : 'هزینه'}
@@ -1097,7 +1309,7 @@ function createTransactionCard(tx) {
         <div class="table-row-content">
             <h6 class="table-row-title ${nameClass}">${tx.name}</h6>
             <p class="table-row-subtitle">
-                ${categoryName} • <span class="transaction-date-persian">${convertToPersianDate(tx.date)}</span>
+                ${categoryName} • <span class="transaction-date-persian">${tx.date}</span>
             </p>
             <span class="badge ${tx.is_deposit ? 'bg-success' : 'bg-danger'}">
                 ${tx.is_deposit ? 'درآمد' : 'هزینه'}
@@ -1689,11 +1901,58 @@ function initializeMonthSelector() {
         
         // Add event listener
         monthSelector.addEventListener('change', function() {
-            const selectedMonth = parseInt(this.value);
-            console.log('Month changed to:', selectedMonth);
+            const selectedMonth = parseInt(this.value) || 10; // Fallback to 10
+            const yearSelect = document.getElementById('yearSelector');
+            let selectedYear = 1404; // Default fallback year
+            
+            console.log('Month selector changed:', {
+                selectedMonth,
+                yearSelectExists: !!yearSelect,
+                yearSelectValue: yearSelect ? yearSelect.value : 'not found',
+                yearSelectOptions: yearSelect ? yearSelect.options.length : 0
+            });
+            
+            if (yearSelect && yearSelect.value && !isNaN(parseInt(yearSelect.value))) {
+                selectedYear = parseInt(yearSelect.value);
+            } else {
+                selectedYear = 1404; // Use fallback year
+            }
+            
+            console.log('Month changed to:', selectedMonth, 'Year:', selectedYear);
             currentMonth = selectedMonth;
-            loadTransactions(currentMonth);
+            currentYear = selectedYear;
+            loadTransactions(currentMonth, selectedYear);
         });
+    }
+    
+    // Initialize year selector
+    const yearSelector = document.getElementById('yearSelector');
+    if (yearSelector) {
+        // Set current year
+        yearSelector.value = currentYear;
+        
+        yearSelector.addEventListener('change', function() {
+            const selectedYear = parseInt(this.value) || 1404; // Fallback to 1404
+            const monthSelect = document.getElementById('monthSelector');
+            let selectedMonth = currentMonth || 10; // Default to current month or 10
+            
+            console.log('Year selector changed:', {
+                selectedYear,
+                monthSelectExists: !!monthSelect,
+                monthSelectValue: monthSelect ? monthSelect.value : 'not found',
+                currentMonth
+            });
+            
+            if (monthSelect && monthSelect.value && !isNaN(parseInt(monthSelect.value))) {
+                selectedMonth = parseInt(monthSelect.value);
+            }
+            
+            console.log('Year changed to:', selectedYear, 'Month:', selectedMonth);
+            currentYear = selectedYear;
+            loadTransactions(selectedMonth, selectedYear);
+        });
+    } else {
+        console.warn('Year selector not found during initialization');
     }
     
     // Initialize currency toggle button
@@ -1740,10 +1999,42 @@ function initializeMonthSelector() {
     const reportMonth = document.getElementById('reportMonth');
     const reportYear = document.getElementById('reportYear');
     if (reportMonth && reportYear) {
-        // Set current month and year as default
-        const currentDate = new Date();
-        reportMonth.value = currentDate.getMonth() + 1;
-        reportYear.value = currentDate.getFullYear();
+        // Set current Persian month and year as default with fallbacks
+        let currentPersianMonth = 10; // Fallback
+        let currentPersianYear = 1404; // Fallback
+        
+        if (typeof moment !== 'undefined' && moment().format) {
+            currentPersianMonth = parseInt(moment().format('jM')) || 10;
+            currentPersianYear = parseInt(moment().format('jYYYY')) || 1404;
+        }
+        
+        reportMonth.value = currentPersianMonth;
+        reportYear.value = currentPersianYear;
+        
+        // Add event listeners for report selectors
+        reportMonth.addEventListener('change', function() {
+            const selectedMonth = parseInt(this.value) || 10; // Fallback to 10
+            let selectedYear = 1404; // Default fallback year
+            
+            if (reportYear.value && !isNaN(parseInt(reportYear.value))) {
+                selectedYear = parseInt(reportYear.value);
+            }
+            
+            console.log('Report month changed to:', selectedMonth, 'Year:', selectedYear);
+            loadTransactions(selectedMonth, selectedYear);
+        });
+        
+        reportYear.addEventListener('change', function() {
+            const selectedYear = parseInt(this.value) || 1404; // Fallback to 1404
+            let selectedMonth = currentMonth || 10; // Default to current month or 10
+            
+            if (reportMonth.value && !isNaN(parseInt(reportMonth.value))) {
+                selectedMonth = parseInt(reportMonth.value);
+            }
+            
+            console.log('Report year changed to:', selectedYear, 'Month:', selectedMonth);
+            loadTransactions(selectedMonth, selectedYear);
+        });
     }
     
     // Add fallback event listener for download button (in case it's loaded later)
@@ -2321,7 +2612,8 @@ function addLoanPayment(loanId = null) {
 function saveLoanPayment() {
     const loanId = document.getElementById('paymentLoanSelect').value;
     const amount = parseFloat(document.getElementById('paymentAmount').value);
-    const paymentDate = document.getElementById('paymentDate').value;
+    const gregorianPaymentDate = document.getElementById('paymentDate').value;
+    const paymentDate = convertToPersianDate(gregorianPaymentDate); // Convert Gregorian input to Persian for backend
     const sourceId = document.getElementById('paymentSource').value;
     const isUsd = document.getElementById('paymentCurrencySelect').value === 'true';
     

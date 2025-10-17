@@ -194,7 +194,7 @@ async def get_loan_payments(
             "id": payment[0],
             "loan_id": payment[1],
             "amount": payment[2],
-            "payment_date": payment[3],
+            "payment_date": db.convert_gregorian_to_persian(payment[3]),  # Convert Gregorian to Persian for frontend
             "source_id": payment[4],
             "source_name": payment[8] if len(payment) > 8 else "Unknown",
             "is_paid": bool(payment[5]),
@@ -233,10 +233,13 @@ async def create_loan_payment(
         # Convert amount to USD if needed for loan payment
         amount_in_usd = payment.amount if payment.is_usd else payment.amount / db.get_exchange_rate()
         
+        # Convert Persian date to Gregorian for database storage
+        gregorian_payment_date = db.convert_persian_to_gregorian(payment.payment_date)
+        
         payment_id = db.add_loan_payment(
             loan_id=loan_id,
             amount=payment.amount,
-            payment_date=payment.payment_date,
+            payment_date=gregorian_payment_date,  # Store Gregorian date in database
             source_id=payment.source_id,
             user_id=current_user[0],
             is_usd=payment.is_usd,

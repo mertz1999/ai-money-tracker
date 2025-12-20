@@ -291,9 +291,10 @@ async def create_loan_payment(
                     loan_category_id = db.add_category("loan-payment")
                 
                 # Create expense transaction (without updating source balance since loan payment handles it)
+                # Use the converted Gregorian date for the transaction
                 transaction_id = db.add_transaction(
                     name=f"Loan Payment - {payment.loan_name}",
-                    date=payment.payment_date,
+                    date=gregorian_payment_date,  # Use converted Gregorian date
                     price_in_dollar=amount_in_usd,
                     your_currency_rate=db.get_exchange_rate(),
                     category_id=loan_category_id,

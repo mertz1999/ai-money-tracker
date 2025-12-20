@@ -62,8 +62,13 @@
 
                         <div class="row">
                             <div class="col-6 mb-3">
-                                <label for="transactionDate" class="form-label">تاریخ</label>
-                                <input type="date" class="form-control form-control-lg" id="transactionDate">
+                                <label for="transactionDate" class="form-label">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    تاریخ (شمسی)
+                                </label>
+                                <input type="text" class="form-control form-control-lg" id="transactionDate" 
+                                       name="transactionDate" placeholder="1404/09/25">
+                                <small class="form-text text-muted">تاریخ را به صورت دستی وارد کنید (مثال: 1404/09/25)</small>
                             </div>
                             <div class="col-6 mb-3">
                                 <label for="transactionCurrency" class="form-label">ارز</label>

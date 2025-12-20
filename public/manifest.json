@@ -1,6 +1,6 @@
 {
-  "name": "AI Money Tracker",
-  "short_name": "MoneyTracker",
+  "name": "پولینو",
+  "short_name": "پولینو",
   "description": "AI-powered personal finance tracker with multi-currency support",
   "start_url": "/",
   "display": "standalone",

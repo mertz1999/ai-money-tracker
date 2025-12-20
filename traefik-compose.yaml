@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.5
+    container_name: traefik
+    # ✅ Shared Traefik instance for multiple services
+    # This Traefik handles routing for:
+    # - money.ensa-ai.com (ai-money-tracker backend)
+    # - ensa-ai.com (ensa-ai backend)
+    command:
+      - /bin/sh
+      - -c
+      - |
+        touch /acme.json
+        chmod 600 /acme.json
+        traefik \
+          --api.insecure=true \
+          --providers.docker=true \
+          --entryPoints.web.address=:80 \
+          --entryPoints.websecure.address=:443 \
+          --certificatesResolvers.myresolver.acme.tlsChallenge=true \
+          --certificatesResolvers.myresolver.acme.email=reza.tz780210@gmail.com \
+          --certificatesResolvers.myresolver.acme.storage=/acme.json
+    ports:
+      - "80:80"   # For web traffic and Let's Encrypt
+      - "443:443" # For secure web traffic
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./acme.json:/acme.json"
+    restart: unless-stopped
+    networks:
+      - traefik-network
+
+networks:
+  traefik-network:
+    driver: bridge
+    name: traefik-network
+

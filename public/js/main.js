@@ -1,9 +1,41 @@
-// Persian Calendar Utilities
-function getCurrentPersianDate() {
-    if (typeof moment !== 'undefined' && moment().format) {
-        return moment().format('jYYYY/jMM/jDD');
+// Persian Calendar Utilities - Get today's date from backend
+let cachedPersianDate = null;
+let dateCacheTime = null;
+
+async function getCurrentPersianDate() {
+    // Cache the date for 1 hour to avoid too many API calls
+    const now = Date.now();
+    if (cachedPersianDate && dateCacheTime && (now - dateCacheTime) < 3600000) {
+        console.log('Using cached Persian date:', cachedPersianDate);
+        return cachedPersianDate;
     }
-    return '1403/10/15'; // Fallback date
+    
+    console.log('Fetching Persian date from API...');
+    try {
+        // The endpoint doesn't require auth, so use regular fetch
+        const response = await fetch('/api/today_persian_date', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response && response.ok) {
+            const data = await response.json();
+            cachedPersianDate = data.date;
+            dateCacheTime = now;
+            console.log('Persian date fetched successfully:', cachedPersianDate);
+            return cachedPersianDate;
+        } else {
+            console.error('Failed to get Persian date from API, status:', response?.status);
+            // Fallback to a default date
+            return '1404/09/25';
+        }
+    } catch (error) {
+        console.error('Error fetching Persian date:', error);
+        // Fallback to a default date
+        return '1404/09/25';
+    }
 }
 
 function getCurrentPersianDateTime() {
@@ -16,63 +48,44 @@ function getCurrentPersianDateTime() {
 function convertToPersianDate(gregorianDate) {
     if (!gregorianDate) return '';
     
-    // Check if it's already in Persian format (contains 'j' or Persian year)
-    if (typeof gregorianDate === 'string' && (gregorianDate.includes('j') || gregorianDate.match(/^\d{4}\/\d{2}\/\d{2}$/))) {
-        return gregorianDate;
+    // Check if it's already in Persian format (Persian year range 1300-1500)
+    if (typeof gregorianDate === 'string') {
+        // Remove 'j' prefix if present
+        const normalized = gregorianDate.replace(/^j/, '').trim();
+        // Check if it matches Persian date format (YYYY/MM/DD or YYYY-MM-DD with year 1300-1500)
+        const persianDateMatch = normalized.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+        if (persianDateMatch) {
+            const year = parseInt(persianDateMatch[1]);
+            // If year is in Persian range (1300-1500), it's already Persian
+            if (year >= 1300 && year <= 1500) {
+                // Normalize to YYYY/MM/DD format
+                const month = persianDateMatch[2].padStart(2, '0');
+                const day = persianDateMatch[3].padStart(2, '0');
+                return `${year}/${month}/${day}`;
+            }
+        }
     }
     
-    // Try moment.js first
+    // Try moment.js to convert Gregorian to Persian
     if (typeof moment !== 'undefined' && moment().format) {
         try {
-            const persianDate = moment(gregorianDate).format('jYYYY/jMM/jDD');
+            // Parse as Gregorian date and convert to Persian
+            const gregorianMoment = moment(gregorianDate, 'YYYY-MM-DD');
+            if (gregorianMoment.isValid()) {
+                // Format as Persian date WITHOUT 'j' prefix (backend expects YYYY/MM/DD)
+                const persianDate = gregorianMoment.format('jYYYY/jMM/jDD').replace(/^j/, '');
+                console.log('Converted date:', gregorianDate, '->', persianDate);
             return persianDate;
+            }
         } catch (error) {
             console.error('Error converting date with moment.js:', error);
         }
     }
     
-    // Fallback: Use a proper Persian calendar conversion
-    try {
-        const date = new Date(gregorianDate);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        
-        // Convert Gregorian to Persian using a more accurate algorithm
-        // Persian calendar starts around March 21st (spring equinox)
-        const persianYear = year - 621;
-        let persianMonth, persianDay;
-        
-        // Persian calendar starts around March 21st (spring equinox)
-        if (month >= 3 && month <= 5) {
-            // March-May -> Farvardin-Ordibehesht (1-2)
-            persianMonth = month - 2;
-            persianDay = day;
-        } else if (month >= 6 && month <= 8) {
-            // June-August -> Khordad-Tir (3-5)
-            persianMonth = month - 2;
-            persianDay = day;
-        } else if (month >= 9 && month <= 11) {
-            // September-November -> Shahrivar-Azar (6-8)
-            persianMonth = month - 2;
-            persianDay = day;
-        } else {
-            // December-February -> Dey-Bahman (9-12)
-            persianMonth = month + 10;
-            persianDay = day;
-        }
-        
-        // Adjust for leap years and month lengths
-        if (persianMonth > 12) {
-            persianMonth -= 12;
-            persianYear += 1;
-        }
-        
-        return `${persianYear}/${persianMonth.toString().padStart(2, '0')}/${persianDay.toString().padStart(2, '0')}`;
-    } catch (error) {
-        console.error('Error in fallback conversion:', error);
-        return '1403/10/15'; // Final fallback
-    }
+    // Fallback: If moment.js is not available, return error
+    console.error('Cannot convert date: moment.js not available or invalid date format:', gregorianDate);
+    // Return current Persian date as fallback
+    return getCurrentPersianDate().replace(/^j/, '');
 }
 
 function convertToGregorianDate(persianDate) {
@@ -81,6 +94,37 @@ function convertToGregorianDate(persianDate) {
         return moment(persianDate, 'jYYYY/jMM/jDD').format('YYYY-MM-DD');
     }
     return '2024-01-01'; // Fallback
+}
+
+function convertJalaliToGregorian(jalaliMonth, jalaliYear) {
+    // Convert Jalali month/year to Gregorian month/year
+    if (typeof moment !== 'undefined' && moment().format) {
+        try {
+            // Create a Jalali date (using first day of the month)
+            const jalaliDate = moment(`${jalaliYear}/${jalaliMonth}/01`, 'jYYYY/jMM/jDD');
+            // Get Gregorian values directly from the moment object
+            // moment-jalaali automatically handles the conversion
+            return {
+                month: jalaliDate.month() + 1, // moment.js months are 0-indexed
+                year: jalaliDate.year()
+            };
+        } catch (error) {
+            console.error('Error converting Jalali to Gregorian with moment:', error);
+            // Fall through to fallback
+        }
+    }
+    // Fallback: approximate conversion (not accurate but better than nothing)
+    // Jalali year 1404 ≈ Gregorian year 2025
+    // This is a rough approximation
+    const gregorianYear = jalaliYear + 621;
+    // Month conversion is complex, so we'll use a simple approximation
+    // Jalali months 1-3 ≈ Gregorian months 3-5, etc.
+    let gregorianMonth = jalaliMonth + 2;
+    if (gregorianMonth > 12) {
+        gregorianMonth -= 12;
+        gregorianYear += 1;
+    }
+    return { month: gregorianMonth, year: gregorianYear };
 }
 
 function formatPersianDate(date, format = 'jYYYY/jMM/jDD') {
@@ -186,6 +230,69 @@ function ensureYearDropdownReady() {
     return true;
 }
 
+// Setup date input with auto-insert "/" functionality
+function setupDateInputAutoSlash(dateInput) {
+    if (!dateInput) return;
+    
+    let isTyping = false;
+    
+    // Track when user starts typing
+    dateInput.addEventListener('keydown', function(e) {
+        // Mark that user is typing
+        if (!['Tab', 'Enter', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+            isTyping = true;
+        }
+        
+        // Handle backspace to remove slashes properly
+        if (e.key === 'Backspace') {
+            const cursorPos = this.selectionStart;
+            const value = this.value;
+            
+            // If backspace is pressed on a slash, remove the slash and the digit before it
+            if (cursorPos > 0 && value[cursorPos - 1] === '/') {
+                e.preventDefault();
+                const newValue = value.substring(0, cursorPos - 2) + value.substring(cursorPos);
+                this.value = newValue;
+                this.setSelectionRange(cursorPos - 2, cursorPos - 2);
+            }
+        }
+    });
+    
+    // Auto-insert "/" as user types (format: YYYY/MM/DD)
+    dateInput.addEventListener('input', function(e) {
+        if (isTyping) {
+            // Remove all non-digit characters
+            let cleanValue = this.value.replace(/\D/g, '');
+            
+            // Auto-insert slashes
+            if (cleanValue.length > 4) {
+                cleanValue = cleanValue.substring(0, 4) + '/' + cleanValue.substring(4);
+            }
+            if (cleanValue.length > 7) {
+                cleanValue = cleanValue.substring(0, 7) + '/' + cleanValue.substring(7, 9);
+            }
+            // Limit to 10 characters (YYYY/MM/DD)
+            if (cleanValue.length > 10) {
+                cleanValue = cleanValue.substring(0, 10);
+            }
+            
+            // Update the input value
+            const cursorPos = this.selectionStart;
+            this.value = cleanValue;
+            // Try to maintain cursor position
+            const newCursorPos = Math.min(cursorPos + (cleanValue.length > this.value.length ? 1 : 0), cleanValue.length);
+            this.setSelectionRange(newCursorPos, newCursorPos);
+        }
+        
+        isTyping = false;
+    });
+    
+    // Reset typing flag on blur
+    dateInput.addEventListener('blur', function() {
+        isTyping = false;
+    });
+}
+
 // Set default date inputs to Persian calendar
 function setPersianDateInputs() {
     // Set today's date in Persian format for date inputs
@@ -216,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ensureYearDropdownReady();
     }, 500);
     
+    
     // Add event listener for transaction modal
     const addTransactionModal = document.getElementById('addTransactionModal');
     if (addTransactionModal) {
@@ -229,11 +337,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 addTransactionForm.reset();
             }
             
-            // Set today's date in Persian calendar
-            const today = getCurrentPersianDate();
-            // Convert Persian date to Gregorian for HTML date input
-            const gregorianToday = convertToGregorianDate(today);
-            document.getElementById('transactionDate').value = gregorianToday;
+            // Setup date input with auto-insert "/" functionality
+            const transactionDateInput = document.getElementById('transactionDate');
+            if (transactionDateInput) {
+                console.log('Setting up date input, fetching today date...');
+                // Set today's date as default (fetch from backend)
+                getCurrentPersianDate().then(today => {
+                    console.log('Today date received:', today);
+                    transactionDateInput.value = today;
+                }).catch(error => {
+                    console.error('Error setting today date:', error);
+                    // Set fallback date
+                    transactionDateInput.value = '1404/09/25';
+                });
+                
+                // Setup auto-insert "/" functionality for manual typing
+                setupDateInputAutoSlash(transactionDateInput);
+            } else {
+                console.warn('Transaction date input not found in modal');
+            }
             // Hide parsed details section by default
             const parsedDetails = document.getElementById('parsedTransactionDetails');
             if (parsedDetails) {
@@ -305,7 +427,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add event listener for save loan button using event delegation
     document.addEventListener('click', function(e) {
-        console.log('Click detected on:', e.target);
+        // Removed debug log to reduce console noise
         if (e.target && e.target.id === 'saveLoanBtn') {
             console.log('Save loan button clicked');
             e.preventDefault();
@@ -562,11 +684,58 @@ let currentExchangeRate = null;
 let sourceDisplayMode = 'default'; // 'default', 'usd', or 'toman'
 
 // Load transactions from API
-async function loadTransactions(month = currentMonth, year = currentYear) {
-    if (!checkAuth()) return;
+async function loadTransactions(month = null, year = null) {
+    console.log('loadTransactions function called', { month, year });
+    
+    if (!checkAuth()) {
+        console.error('checkAuth() returned false - user not authenticated');
+        return;
+    }
+    console.log('Authentication check passed');
     
     try {
-        console.log('loadTransactions called with:', { month, year, currentMonth });
+        // Always read the current values directly from the selectors to ensure accuracy
+        const monthSelector = document.getElementById('monthSelector');
+        const yearSelector = document.getElementById('yearSelector');
+        
+        console.log('Selectors found:', { 
+            monthSelector: !!monthSelector, 
+            yearSelector: !!yearSelector,
+            monthSelectorValue: monthSelector?.value,
+            yearSelectorValue: yearSelector?.value
+        });
+        
+        // Get month from selector if not provided or if selector exists
+        if (monthSelector && monthSelector.value) {
+            const selectorMonth = parseInt(monthSelector.value);
+            if (!isNaN(selectorMonth) && selectorMonth >= 1 && selectorMonth <= 12) {
+                month = selectorMonth;
+                console.log('Reading month from monthSelector:', month);
+            }
+        }
+        
+        // Fallback to parameter or currentMonth if selector not available
+        if (!month || isNaN(month)) {
+            month = currentMonth || 10;
+            console.log('Using fallback month:', month);
+        }
+        
+        // Get year from selector if not provided
+        if (yearSelector && yearSelector.value) {
+            const selectorYear = parseInt(yearSelector.value);
+            if (!isNaN(selectorYear) && selectorYear >= 1300) {
+                year = selectorYear;
+                console.log('Reading year from selector:', year);
+            }
+        }
+        
+        // Fallback to parameter or currentYear if selector not available
+        if (!year || isNaN(year)) {
+            year = currentYear || 1404;
+            console.log('Using fallback year:', year);
+        }
+        
+        console.log('loadTransactions called with:', { month, year, currentMonth, currentYear });
         
         // Ensure year dropdown is ready
         ensureYearDropdownReady();
@@ -596,12 +765,43 @@ async function loadTransactions(month = currentMonth, year = currentYear) {
             console.log('Emergency fallback applied:', { month, year });
         }
         
-        console.log('Loading transactions for month:', month, 'year:', year);
-        const response = await fetchWithAuth(`/api/transactions?month=${month}&year=${year}`);
+        // Send Jalali month/year directly to backend
+        // Backend will convert the Jalali month range to Gregorian date range for database query
+        // This is necessary because Jalali months can span across two Gregorian months
+        const apiUrl = `/api/transactions?month=${month}&year=${year}`;
+        console.log('Making API request to:', apiUrl);
+        console.log('Loading transactions for Jalali month:', month, 'year:', year);
+        
+        const response = await fetchWithAuth(apiUrl);
+        console.log('API response received:', { status: response.status, ok: response.ok });
         if (response.ok) {
-            const transactions = await response.json();
+            const data = await response.json();
+            console.log('Raw data received from API:', data);
+            console.log('Data type:', typeof data);
+            console.log('Is array:', Array.isArray(data));
+            
+            // Handle different response formats
+            let transactions;
+            if (Array.isArray(data)) {
+                transactions = data;
+            } else if (data.transactions && Array.isArray(data.transactions)) {
+                transactions = data.transactions;
+                console.log('Found transactions in data.transactions');
+            } else if (data.data && Array.isArray(data.data)) {
+                transactions = data.data;
+                console.log('Found transactions in data.data');
+            } else {
+                console.error('Unexpected response format:', data);
+                transactions = [];
+            }
+            
+            console.log('Transactions extracted:', transactions);
+            console.log('Number of transactions:', transactions.length);
+            
             // Store all transactions
             allTransactions = transactions;
+            console.log('allTransactions stored:', allTransactions);
+            console.log('allTransactions length:', allTransactions.length);
             
             // Calculate totals for transaction stats
             const totals = transactions.reduce((acc, tx) => {
@@ -615,10 +815,18 @@ async function loadTransactions(month = currentMonth, year = currentYear) {
             
             // Update summary and table
             updateTransactionSummary(totals.income, totals.expense);
+            
+            // Always update the transactions table to display the loaded data immediately
+            console.log('Calling updateTransactionsTable(1)...');
             updateTransactionsTable(1); // Reset to first page when loading new data
+            console.log('updateTransactionsTable called');
             
             // Attach download button event listener after transactions are loaded
             attachDownloadButtonListener();
+        } else {
+            // If response is not ok, throw an error
+            const errorText = await response.text();
+            throw new Error(`Failed to load transactions: ${errorText}`);
         }
     } catch (error) {
         console.error('Error loading transactions:', error);
@@ -632,6 +840,8 @@ async function loadTransactions(month = currentMonth, year = currentYear) {
                 </tr>
             `;
         }
+        // Re-throw error so callers can handle it
+        throw error;
     }
 }
 
@@ -677,7 +887,19 @@ function parseTransactionDescription() {
         console.log('Parse response data:', data);
         // Fill form with parsed data
         document.getElementById('transactionName').value = data.name;
-        document.getElementById('transactionDate').value = data.date;
+        // Set the parsed date (already in Persian format from backend)
+        const dateInput = document.getElementById('transactionDate');
+        if (dateInput) {
+            // Remove 'j' prefix if present and normalize format
+            let persianDate = data.date.replace(/^j/, '').replace(/-/g, '/');
+            // Normalize to YYYY/MM/DD format
+            const dateParts = persianDate.split('/');
+            if (dateParts.length === 3) {
+                persianDate = `${dateParts[0]}/${dateParts[1].padStart(2, '0')}/${dateParts[2].padStart(2, '0')}`;
+            }
+            dateInput.value = persianDate;
+            // The date picker will automatically update when the value changes
+        }
         document.getElementById('transactionAmount').value = data.price;
         document.getElementById('transactionCurrency').value = data.is_usd.toString();
         
@@ -740,8 +962,21 @@ function saveTransaction() {
     
     // Get form values
     const name = document.getElementById('transactionName').value;
-    const gregorianDate = document.getElementById('transactionDate').value;
-    const date = convertToPersianDate(gregorianDate); // Convert Gregorian input to Persian for backend
+    const dateInput = document.getElementById('transactionDate').value;
+    // Date is already in Persian format (YYYY/MM/DD) from the date picker
+    // Just normalize it to ensure proper format
+    let date = dateInput.trim();
+    // Remove 'j' prefix if present and normalize separators
+    date = date.replace(/^j/, '').replace(/-/g, '/');
+    // Ensure format is YYYY/MM/DD
+    if (!date.match(/^\d{4}\/\d{1,2}\/\d{1,2}$/)) {
+        console.error('Invalid date format:', date);
+        showWarningToast('لطفا تاریخ معتبر وارد کنید');
+        return;
+    }
+    // Normalize month and day to 2 digits
+    const dateParts = date.split('/');
+    date = `${dateParts[0]}/${dateParts[1].padStart(2, '0')}/${dateParts[2].padStart(2, '0')}`;
     const price = parseFloat(document.getElementById('transactionAmount').value);
     const is_usd = document.getElementById('transactionCurrency').value === 'true';
     const category_name = document.getElementById('transactionCategory').value;
@@ -1125,12 +1360,60 @@ function toggleSourceDisplayMode(mode) {
 
 // Update transactions table with pagination - Mobile PWA optimized
 function updateTransactionsTable(page = 1) {
+    console.log('updateTransactionsTable called with page:', page);
+    console.log('allTransactions:', allTransactions);
+    console.log('allTransactions length:', allTransactions ? allTransactions.length : 0);
+    
     currentPage = page;
     const tbody = document.querySelector('#transactions-table tbody');
     const transactionsList = document.querySelector('#transactions-list');
     const paginationContainer = document.querySelector('#transactionsPagination');
     
-    if (!allTransactions) return;
+    console.log('Elements found:', {
+        tbody: !!tbody,
+        transactionsList: !!transactionsList,
+        paginationContainer: !!paginationContainer
+    });
+    
+    if (!allTransactions || allTransactions.length === 0) {
+        console.log('No transactions to display, showing empty state');
+        // Show empty state
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <h6 class="empty-state-title">تراکنشی یافت نشد</h6>
+                            <p class="empty-state-text mb-3">برای ماه و سال انتخاب شده تراکنشی ثبت نشده است.</p>
+                            <button class="btn btn-primary btn-sm btn-add-first-transaction" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                                <i class="fas fa-plus me-2"></i>
+                                افزودن اولین تراکنش
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        if (transactionsList) {
+            transactionsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <h5 class="empty-state-title">تراکنشی یافت نشد</h5>
+                    <p class="empty-state-text">برای ماه و سال انتخاب شده تراکنشی ثبت نشده است.</p>
+                    <button class="btn btn-primary btn-add-first-transaction" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                        <i class="fas fa-plus me-2"></i>
+                        افزودن اولین تراکنش
+                    </button>
+                </div>
+            `;
+        }
+        return;
+    }
     
     // Calculate pagination
     const totalItems = allTransactions.length;
@@ -1141,42 +1424,76 @@ function updateTransactionsTable(page = 1) {
     // Get current page transactions
     const currentTransactions = allTransactions.slice(startIndex, endIndex);
     
+    console.log('Pagination info:', {
+        totalItems,
+        totalPages,
+        startIndex,
+        endIndex,
+        currentTransactionsLength: currentTransactions.length
+    });
+    console.log('Current transactions to display:', currentTransactions);
     
     // Update mobile transactions list
     if (transactionsList) {
+        console.log('Updating mobile transactions list...');
         transactionsList.innerHTML = '';
         if (currentTransactions.length === 0) {
             transactionsList.innerHTML = `
-                <div class="text-center py-4">
-                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
-                    <h5 class="text-muted">No transactions found</h5>
-                    <p class="text-muted">No transactions for the selected month.</p>
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <h5 class="empty-state-title">تراکنشی یافت نشد</h5>
+                    <p class="empty-state-text">برای ماه و سال انتخاب شده تراکنشی ثبت نشده است.</p>
+                    <button class="btn btn-primary btn-add-first-transaction" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                        <i class="fas fa-plus me-2"></i>
+                        افزودن اولین تراکنش
+                    </button>
                 </div>
             `;
         } else {
-            currentTransactions.forEach(tx => {
+            console.log('Creating mobile transaction cards, count:', currentTransactions.length);
+            currentTransactions.forEach((tx, index) => {
+                console.log(`Creating card ${index + 1}:`, tx);
                 const transactionCard = createTransactionCard(tx);
+                if (transactionCard) {
                 transactionsList.appendChild(transactionCard);
+                } else {
+                    console.error('createTransactionCard returned null for transaction:', tx);
+                }
             });
+            console.log('Mobile transactions list updated, children count:', transactionsList.children.length);
         }
+    } else {
+        console.warn('transactionsList element not found!');
     }
     
     // Update desktop table
     if (tbody) {
+        console.log('Updating desktop table...');
         tbody.innerHTML = '';
         if (currentTransactions.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center py-4">
-                        <i class="fas fa-receipt fa-2x text-muted mb-2"></i>
-                        <h6 class="text-muted">No transactions found</h6>
-                        <p class="text-muted mb-0">No transactions for the selected month.</p>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <h6 class="empty-state-title">تراکنشی یافت نشد</h6>
+                            <p class="empty-state-text mb-3">برای ماه و سال انتخاب شده تراکنشی ثبت نشده است.</p>
+                            <button class="btn btn-primary btn-sm btn-add-first-transaction" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                                <i class="fas fa-plus me-2"></i>
+                                افزودن اولین تراکنش
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
         } else {
-            currentTransactions.forEach(tx => {
-            console.log('Transaction:', tx);
+            console.log('Creating desktop table rows, count:', currentTransactions.length);
+            currentTransactions.forEach((tx, index) => {
+            console.log(`Creating table row ${index + 1}:`, tx);
             const row = document.createElement('tr');
             
             // No icon logic, just display the category name
@@ -1235,7 +1552,10 @@ function updateTransactionsTable(page = 1) {
             
             tbody.appendChild(row);
             });
+            console.log('Desktop table rows appended, tbody children count:', tbody.children.length);
         }
+    } else {
+        console.warn('tbody element not found!');
     }
     
     // Update pagination UI
@@ -1595,8 +1915,9 @@ function toggleTransactionCurrency() {
         cell.textContent = displayInUSD ? usdAmount : tomanAmount;
     });
     
-    // Reload transactions to update the display
-    loadTransactions(currentMonth);
+    // Just update the table display, don't reload from server
+    // The transactions are already loaded, we just need to refresh the display
+    updateTransactionsTable(currentPage);
 }
 
 // Update balance summary cards
@@ -1764,7 +2085,7 @@ function switchView(viewName) {
         if (transactionsTabPane) transactionsTabPane.classList.add('active');
         
         // Load transactions for the current month
-        loadTransactions(currentMonth);
+        // Don't load transactions automatically - user must click the "دیدن تراکنش‌ها" button
     }
 }
 
@@ -1876,8 +2197,7 @@ function loadInitialData() {
     loadCategories();
     loadSources();
     
-    // Load transactions for current month
-    loadTransactions(currentMonth);
+    // Don't load transactions automatically - user must click the button
     
     // Load loans and loan summary
     loadLoans();
@@ -1886,73 +2206,79 @@ function loadInitialData() {
     // Load exchange rate
     fetchExchangeRate();
     
-    // Initialize month selector
+    // Initialize month selector - use setTimeout to ensure component is loaded
+    setTimeout(() => {
     initializeMonthSelector();
+    }, 500);
     
     console.log('Initial data loaded');
 }
 
-// Initialize month selector
+// Initialize month selector - attach event listeners to trigger backend requests
 function initializeMonthSelector() {
+    console.log('Initializing month and year selectors...');
+    
+    // Initialize month selector
     const monthSelector = document.getElementById('monthSelector');
     if (monthSelector) {
-        // Set current month
-        monthSelector.value = currentMonth;
+        // Remove any existing event listeners by cloning the element
+        const newMonthSelector = monthSelector.cloneNode(true);
+        monthSelector.parentNode.replaceChild(newMonthSelector, monthSelector);
         
-        // Add event listener
-        monthSelector.addEventListener('change', function() {
-            const selectedMonth = parseInt(this.value) || 10; // Fallback to 10
-            const yearSelect = document.getElementById('yearSelector');
-            let selectedYear = 1404; // Default fallback year
+        // Set current month
+        newMonthSelector.value = currentMonth;
+        
+        // Add event listener - automatically load transactions when month changes
+        newMonthSelector.addEventListener('change', function() {
+            const rawValue = this.value;
+            const selectedMonth = parseInt(rawValue);
             
-            console.log('Month selector changed:', {
-                selectedMonth,
-                yearSelectExists: !!yearSelect,
-                yearSelectValue: yearSelect ? yearSelect.value : 'not found',
-                yearSelectOptions: yearSelect ? yearSelect.options.length : 0
-            });
-            
-            if (yearSelect && yearSelect.value && !isNaN(parseInt(yearSelect.value))) {
-                selectedYear = parseInt(yearSelect.value);
-            } else {
-                selectedYear = 1404; // Use fallback year
+            // Validate the month value
+            if (isNaN(selectedMonth) || selectedMonth < 1 || selectedMonth > 12) {
+                console.error('Invalid month value:', rawValue);
+                return;
             }
             
-            console.log('Month changed to:', selectedMonth, 'Year:', selectedYear);
+            // Update currentMonth for consistency
             currentMonth = selectedMonth;
-            currentYear = selectedYear;
-            loadTransactions(currentMonth, selectedYear);
+            
+            console.log('Month selector changed to:', selectedMonth);
         });
+        
+        console.log('Month selector initialized');
+    } else {
+        console.warn('Month selector not found');
     }
     
     // Initialize year selector
     const yearSelector = document.getElementById('yearSelector');
     if (yearSelector) {
-        // Set current year
-        yearSelector.value = currentYear;
+        // Remove any existing event listeners by cloning the element
+        const newYearSelector = yearSelector.cloneNode(true);
+        yearSelector.parentNode.replaceChild(newYearSelector, yearSelector);
         
-        yearSelector.addEventListener('change', function() {
-            const selectedYear = parseInt(this.value) || 1404; // Fallback to 1404
-            const monthSelect = document.getElementById('monthSelector');
-            let selectedMonth = currentMonth || 10; // Default to current month or 10
+        // Set current year
+        newYearSelector.value = currentYear;
+        
+        newYearSelector.addEventListener('change', function() {
+            const rawValue = this.value;
+            const selectedYear = parseInt(rawValue) || 1404; // Fallback to 1404
             
-            console.log('Year selector changed:', {
-                selectedYear,
-                monthSelectExists: !!monthSelect,
-                monthSelectValue: monthSelect ? monthSelect.value : 'not found',
-                currentMonth
-            });
-            
-            if (monthSelect && monthSelect.value && !isNaN(parseInt(monthSelect.value))) {
-                selectedMonth = parseInt(monthSelect.value);
+            // Validate the year value
+            if (isNaN(selectedYear) || selectedYear < 1300 || selectedYear > 1500) {
+                console.error('Invalid year value:', rawValue);
+                return;
             }
             
-            console.log('Year changed to:', selectedYear, 'Month:', selectedMonth);
+            // Update currentYear for consistency
             currentYear = selectedYear;
-            loadTransactions(selectedMonth, selectedYear);
+            
+            console.log('Year selector changed to:', selectedYear);
         });
+        
+        console.log('Year selector initialized');
     } else {
-        console.warn('Year selector not found during initialization');
+        console.warn('Year selector not found');
     }
     
     // Initialize currency toggle button
@@ -1961,6 +2287,114 @@ function initializeMonthSelector() {
         toggleCurrencyBtn.addEventListener('click', function() {
             toggleTransactionCurrency();
         });
+    }
+    
+    // Initialize load transactions button using event delegation
+    // This ensures it works even if the component is loaded dynamically
+    document.addEventListener('click', function(e) {
+        const button = e.target.closest('#loadTransactionsBtn');
+        if (button) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Load transactions button clicked via event delegation');
+            
+            // Get month and year from selectors
+            const monthSelector = document.getElementById('monthSelector');
+            const yearSelector = document.getElementById('yearSelector');
+            
+            if (!monthSelector || !yearSelector) {
+                console.error('Month or year selector not found');
+                showErrorToast('لطفا ماه و سال را انتخاب کنید');
+                return;
+            }
+            
+            const month = parseInt(monthSelector.value);
+            const year = parseInt(yearSelector.value);
+            
+            if (isNaN(month) || isNaN(year)) {
+                console.error('Invalid month or year:', { month, year });
+                showErrorToast('لطفا ماه و سال معتبر انتخاب کنید');
+                return;
+            }
+            
+            console.log('Loading transactions for month:', month, 'year:', year);
+            console.log('Making API request to: /api/transactions?month=' + month + '&year=' + year);
+            
+            // Show loading indicator
+            if (typeof showLoadingOverlay === 'function') {
+                showLoadingOverlay();
+            }
+            
+            // Load transactions from backend
+            loadTransactions(month, year)
+                .then(() => {
+                    console.log('Transactions loaded successfully');
+                    if (typeof hideLoadingOverlay === 'function') {
+                        hideLoadingOverlay();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading transactions:', error);
+                    if (typeof hideLoadingOverlay === 'function') {
+                        hideLoadingOverlay();
+                    }
+                    showErrorToast('خطا در بارگذاری تراکنش‌ها');
+                });
+        }
+    });
+    
+    // Also try to attach directly if button exists
+    const loadTransactionsBtn = document.getElementById('loadTransactionsBtn');
+    if (loadTransactionsBtn) {
+        console.log('Load transactions button found, attaching listener');
+        loadTransactionsBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Load transactions button clicked (direct listener)');
+            
+            // Get month and year from selectors
+            const monthSelector = document.getElementById('monthSelector');
+            const yearSelector = document.getElementById('yearSelector');
+            
+            if (!monthSelector || !yearSelector) {
+                console.error('Month or year selector not found');
+                showErrorToast('لطفا ماه و سال را انتخاب کنید');
+                return;
+            }
+            
+            const month = parseInt(monthSelector.value);
+            const year = parseInt(yearSelector.value);
+            
+            if (isNaN(month) || isNaN(year)) {
+                console.error('Invalid month or year:', { month, year });
+                showErrorToast('لطفا ماه و سال معتبر انتخاب کنید');
+                return;
+            }
+            
+            console.log('Loading transactions for month:', month, 'year:', year);
+            
+            // Show loading indicator
+            if (typeof showLoadingOverlay === 'function') {
+                showLoadingOverlay();
+            }
+            
+            // Load transactions from backend
+            loadTransactions(month, year)
+                .then(() => {
+                    console.log('Transactions loaded successfully');
+                    if (typeof hideLoadingOverlay === 'function') {
+                        hideLoadingOverlay();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading transactions:', error);
+                    if (typeof hideLoadingOverlay === 'function') {
+                        hideLoadingOverlay();
+                    }
+                    showErrorToast('خطا در بارگذاری تراکنش‌ها');
+                });
+        });
+    } else {
+        console.warn('Load transactions button not found during initialization');
     }
     
     // Initialize edit transaction modal
@@ -1986,56 +2420,6 @@ function initializeMonthSelector() {
         });
     }
     
-    // Initialize download report button using event delegation
-    document.addEventListener('click', function(e) {
-        if (e.target && e.target.id === 'downloadReportBtn') {
-            e.preventDefault();
-            console.log('Download report button clicked');
-            downloadMonthlyReport();
-        }
-    });
-    
-    // Initialize report month/year selectors
-    const reportMonth = document.getElementById('reportMonth');
-    const reportYear = document.getElementById('reportYear');
-    if (reportMonth && reportYear) {
-        // Set current Persian month and year as default with fallbacks
-        let currentPersianMonth = 10; // Fallback
-        let currentPersianYear = 1404; // Fallback
-        
-        if (typeof moment !== 'undefined' && moment().format) {
-            currentPersianMonth = parseInt(moment().format('jM')) || 10;
-            currentPersianYear = parseInt(moment().format('jYYYY')) || 1404;
-        }
-        
-        reportMonth.value = currentPersianMonth;
-        reportYear.value = currentPersianYear;
-        
-        // Add event listeners for report selectors
-        reportMonth.addEventListener('change', function() {
-            const selectedMonth = parseInt(this.value) || 10; // Fallback to 10
-            let selectedYear = 1404; // Default fallback year
-            
-            if (reportYear.value && !isNaN(parseInt(reportYear.value))) {
-                selectedYear = parseInt(reportYear.value);
-            }
-            
-            console.log('Report month changed to:', selectedMonth, 'Year:', selectedYear);
-            loadTransactions(selectedMonth, selectedYear);
-        });
-        
-        reportYear.addEventListener('change', function() {
-            const selectedYear = parseInt(this.value) || 1404; // Fallback to 1404
-            let selectedMonth = currentMonth || 10; // Default to current month or 10
-            
-            if (reportMonth.value && !isNaN(parseInt(reportMonth.value))) {
-                selectedMonth = parseInt(reportMonth.value);
-            }
-            
-            console.log('Report year changed to:', selectedYear, 'Month:', selectedMonth);
-            loadTransactions(selectedMonth, selectedYear);
-        });
-    }
     
     // Add fallback event listener for download button (in case it's loaded later)
     setTimeout(() => {
@@ -2211,10 +2595,14 @@ async function downloadMonthlyReport() {
             return;
         }
         
-        const month = parseInt(monthSelect.value);
-        const year = parseInt(yearSelect.value);
+        const jalaliMonth = parseInt(monthSelect.value);
+        const jalaliYear = parseInt(yearSelect.value);
         
-        console.log('Selected month:', month, 'year:', year);
+        console.log('Selected Jalali month:', jalaliMonth, 'year:', jalaliYear);
+        
+        // Send Jalali dates directly to backend
+        // Backend will handle the conversion to Gregorian date range for the report
+        // This is necessary because Jalali months can span across two Gregorian months
         
         // Show loading state
         const downloadBtn = document.getElementById('downloadReportBtn');
@@ -2222,8 +2610,8 @@ async function downloadMonthlyReport() {
         downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         downloadBtn.disabled = true;
         
-        // Make API call to download PDF
-        const apiUrl = `/api/monthly-report?month=${month}&year=${year}`;
+        // Make API call to download PDF (using Jalali dates - backend will convert)
+        const apiUrl = `/api/monthly-report?month=${jalaliMonth}&year=${jalaliYear}`;
         console.log('Making API call to:', apiUrl);
         
         const response = await fetchWithAuth(apiUrl);
@@ -2237,7 +2625,7 @@ async function downloadMonthlyReport() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `monthly_report_${year}_${month.toString().padStart(2, '0')}.pdf`;
+            a.download = `monthly_report_${jalaliYear}_${jalaliMonth.toString().padStart(2, '0')}.pdf`;
             document.body.appendChild(a);
             a.click();
             

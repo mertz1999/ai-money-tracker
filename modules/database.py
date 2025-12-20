@@ -28,9 +28,24 @@ class Database:
         return f"{persian_year:04d}-{persian_month:02d}-{persian_day:02d}"
     
     def convert_persian_to_gregorian(self, persian_date):
-        """Convert Persian date to Gregorian date"""
+        """Convert Persian date to Gregorian date
+        Supports formats: 'YYYY-MM-DD', 'YYYY/MM/DD', 'jYYYY/jMM/jDD'
+        """
         if isinstance(persian_date, str):
-            year, month, day = map(int, persian_date.split('-'))
+            # Remove 'j' prefix if present and normalize separators
+            normalized_date = persian_date.replace('j', '').strip()
+            # Handle both '-' and '/' separators
+            if '/' in normalized_date:
+                parts = normalized_date.split('/')
+            elif '-' in normalized_date:
+                parts = normalized_date.split('-')
+            else:
+                raise ValueError(f"Invalid date format: {persian_date}")
+            
+            if len(parts) != 3:
+                raise ValueError(f"Invalid date format: {persian_date}")
+            
+            year, month, day = map(int, parts)
         else:
             year, month, day = persian_date
         gregorian_year, gregorian_month, gregorian_day = to_gregorian(year, month, day)
@@ -363,17 +378,35 @@ class Database:
             return [dict(zip(columns, row)) for row in rows]
 
     def get_all_transactions(self, user_id, month=None, year=None):
-        """Get all transactions for a user, optionally filtered by month and year"""
+        """Get all transactions for a user, optionally filtered by month and year
+        Handles both Jalali (Persian) and Gregorian date inputs.
+        If year is in Jalali range (1300-1500), treats month as Jalali month.
+        If year is in Gregorian range (1900-2100), converts to Jalali first.
+        """
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
             if month is not None:
-                # Use provided year or get current Persian year
+                # Detect if year is Jalali (1300-1500) or Gregorian (1900-2100)
                 if year is not None:
-                    persian_year = year
+                    if 1300 <= year <= 1500:
+                        # Year is Jalali (Persian)
+                        persian_year = year
+                        persian_month = month
+                    elif 1900 <= year <= 2100:
+                        # Year is Gregorian, convert to Jalali
+                        # Create a Gregorian date for the first day of the month
+                        gregorian_date = datetime(year, month, 1)
+                        persian_year, persian_month, _ = from_gregorian(
+                            gregorian_date.year, gregorian_date.month, gregorian_date.day
+                        )
+                    else:
+                        # Ambiguous year, assume Jalali if in reasonable range
+                        persian_year = year
+                        persian_month = month
                 else:
                     now = datetime.now()
-                    persian_year, _, _ = from_gregorian(now.year, now.month, now.day)
+                    persian_year, persian_month, _ = from_gregorian(now.year, now.month, now.day)
                 
                 # Get the correct day count for Persian month
                 def get_persian_month_days(year, month):
@@ -391,11 +424,11 @@ class Database:
                             return 30
                 
                 # Convert Persian month range to Gregorian for database query
-                persian_start_date = f"{persian_year:04d}-{month:02d}-01"
+                persian_start_date = f"{persian_year:04d}-{persian_month:02d}-01"
                 
                 # Get the last day of the current month
-                last_day = get_persian_month_days(persian_year, month)
-                persian_end_date = f"{persian_year:04d}-{month:02d}-{last_day:02d}"
+                last_day = get_persian_month_days(persian_year, persian_month)
+                persian_end_date = f"{persian_year:04d}-{persian_month:02d}-{last_day:02d}"
                 
                 # Convert to Gregorian for database query
                 start_date = self.convert_persian_to_gregorian(persian_start_date)
@@ -418,22 +451,82 @@ class Database:
             return cursor.fetchall()
     
     def get_transactions_by_month(self, user_id, month, year):
-        """Get all transactions for a user for a specific month and year"""
+        """Get all transactions for a user for a specific month and year
+        Handles both Jalali (Persian) and Gregorian date inputs.
+        If year is in Jalali range (1300-1500), treats month as Jalali month.
+        If year is in Gregorian range (1900-2100), converts to Jalali first.
+        """
         with self.get_connection() as conn:
             cursor = conn.cursor()
             
-            start_date = f"{year}-{month:02d}-01"
-            if month == 12:
-                end_date = f"{year + 1}-01-01"
+            # Detect if year is Jalali (1300-1500) or Gregorian (1900-2100)
+            if 1300 <= year <= 1500:
+                # Year is Jalali (Persian) - convert Jalali month range to Gregorian date range
+                persian_year = year
+                persian_month = month
+                
+                # Get the correct day count for Persian month
+                def get_persian_month_days(year, month):
+                    """Get the number of days in a Persian month"""
+                    if month <= 6:
+                        return 31  # First 6 months have 31 days
+                    elif month <= 11:
+                        return 30  # Next 5 months have 30 days
+                    else:  # Month 12 (Esfand)
+                        # Check if it's a leap year (29 days) or regular year (30 days)
+                        # Persian leap year: year % 4 == 3
+                        if year % 4 == 3:
+                            return 29
+                        else:
+                            return 30
+                
+                # Convert Persian month range to Gregorian for database query
+                persian_start_date = f"{persian_year:04d}-{persian_month:02d}-01"
+                last_day = get_persian_month_days(persian_year, persian_month)
+                persian_end_date = f"{persian_year:04d}-{persian_month:02d}-{last_day:02d}"
+                
+                # Convert to Gregorian for database query
+                start_date = self.convert_persian_to_gregorian(persian_start_date)
+                end_date = self.convert_persian_to_gregorian(persian_end_date)
+                
+                print(f"get_transactions_by_month - Persian date range: {persian_start_date} to {persian_end_date}")
+                print(f"get_transactions_by_month - Gregorian date range: {start_date} to {end_date}")
+            elif 1900 <= year <= 2100:
+                # Year is Gregorian - use simple month calculation
+                start_date = f"{year}-{month:02d}-01"
+                if month == 12:
+                    end_date = f"{year + 1}-01-01"
+                else:
+                    end_date = f"{year}-{month + 1:02d}-01"
             else:
-                end_date = f"{year}-{month + 1:02d}-01"
+                # Ambiguous year, assume Jalali if in reasonable range
+                persian_year = year
+                persian_month = month
+                
+                def get_persian_month_days(year, month):
+                    if month <= 6:
+                        return 31
+                    elif month <= 11:
+                        return 30
+                    else:
+                        if year % 4 == 3:
+                            return 29
+                        else:
+                            return 30
+                
+                persian_start_date = f"{persian_year:04d}-{persian_month:02d}-01"
+                last_day = get_persian_month_days(persian_year, persian_month)
+                persian_end_date = f"{persian_year:04d}-{persian_month:02d}-{last_day:02d}"
+                
+                start_date = self.convert_persian_to_gregorian(persian_start_date)
+                end_date = self.convert_persian_to_gregorian(persian_end_date)
             
             cursor.execute("""
                 SELECT t.*, c.name as category, s.name as source
                 FROM transactions t
                 LEFT JOIN categories c ON t.category_id = c.id
                 LEFT JOIN sources s ON t.source_id = s.id
-                WHERE t.user_id = ? AND t.date >= ? AND t.date < ?
+                WHERE t.user_id = ? AND t.date >= ? AND t.date <= ?
                 ORDER BY t.date DESC
             """, (user_id, start_date, end_date))
             

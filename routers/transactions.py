@@ -276,6 +276,13 @@ async def parse_transaction(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/api/today_persian_date")
+async def get_today_persian_date(db: Database = Depends(get_db)):
+    """Get today's date in Persian calendar format (YYYY/MM/DD)"""
+    persian_date = db.get_current_persian_date()  # Returns YYYY-MM-DD
+    # Convert to YYYY/MM/DD format for frontend
+    return {"date": persian_date.replace("-", "/")}
+
 @router.get("/api/exchange_rate", response_model=ExchangeRateResponse)
 def get_exchange_rate(live: bool = False, exchange=Depends(get_exchange_dependency)):
     """Get the current USD to Toman exchange rate"""

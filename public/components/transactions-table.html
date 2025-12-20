@@ -1,37 +1,62 @@
 <!-- Transactions Table Component - Mobile PWA Design -->
-<div class="card">
-    <div class="card-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">فهرست تراکنش‌ها</h5>
-            <div class="d-flex gap-2 align-items-center">
-                <div class="d-flex gap-1">
-                    <select class="form-select form-select-sm" id="reportMonth" style="width: auto;">
-                        <option value="1">فروردین</option>
-                        <option value="2">اردیبهشت</option>
-                        <option value="3">خرداد</option>
-                        <option value="4">تیر</option>
-                        <option value="5">مرداد</option>
-                        <option value="6">شهریور</option>
-                        <option value="7">مهر</option>
-                        <option value="8">آبان</option>
-                        <option value="9">آذر</option>
-                        <option value="10">دی</option>
-                        <option value="11">بهمن</option>
-                        <option value="12">اسفند</option>
-                    </select>
-                    <select class="form-select form-select-sm" id="reportYear" style="width: auto;">
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2025">2025</option>
-                    </select>
-                </div>
-                <button class="btn btn-sm btn-outline-success" id="downloadReportBtn" title="Download Monthly Report">
-                    <i class="fas fa-file-pdf"></i>
-                </button>
-                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
-                    <i class="fas fa-plus"></i>
-                </button>
+<div class="card transactions-card">
+    <div class="card-header transactions-card-header">
+        <div class="transactions-header-top">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list-alt me-2"></i>
+                فهرست تراکنش‌ها
+            </h5>
+            <button class="btn btn-primary btn-add-transaction" data-bs-toggle="modal" data-bs-target="#addTransactionModal" title="افزودن تراکنش جدید">
+                <i class="fas fa-plus"></i>
+                <span class="d-none d-sm-inline ms-1">افزودن</span>
+            </button>
+        </div>
+        <div class="transactions-filters">
+            <div class="filter-group">
+                <label for="monthSelector" class="filter-label">
+                    <i class="fas fa-calendar-alt"></i>
+                    ماه:
+                </label>
+                <select id="monthSelector" class="form-select filter-select">
+                    <option value="1">فروردین</option>
+                    <option value="2">اردیبهشت</option>
+                    <option value="3">خرداد</option>
+                    <option value="4">تیر</option>
+                    <option value="5">مرداد</option>
+                    <option value="6">شهریور</option>
+                    <option value="7">مهر</option>
+                    <option value="8">آبان</option>
+                    <option value="9">آذر</option>
+                    <option value="10">دی</option>
+                    <option value="11">بهمن</option>
+                    <option value="12">اسفند</option>
+                </select>
             </div>
+            <div class="filter-group">
+                <label for="yearSelector" class="filter-label">
+                    <i class="fas fa-calendar"></i>
+                    سال:
+                </label>
+                <select id="yearSelector" class="form-select filter-select">
+                    <option value="1400">1400</option>
+                    <option value="1401">1401</option>
+                    <option value="1402">1402</option>
+                    <option value="1403">1403</option>
+                    <option value="1404" selected>1404</option>
+                    <option value="1405">1405</option>
+                    <option value="1406">1406</option>
+                    <option value="1407">1407</option>
+                    <option value="1408">1408</option>
+                </select>
+            </div>
+            <button type="button" class="btn btn-primary load-transactions-btn" id="loadTransactionsBtn" title="دیدن تراکنش‌ها">
+                <i class="fas fa-eye me-2"></i>
+                دیدن تراکنش‌ها
+            </button>
+            <button class="btn btn-outline-secondary currency-toggle-btn" id="toggleCurrencyBtn" title="تغییر واحد پول">
+                <i class="fas fa-exchange-alt"></i>
+                <span class="d-none d-sm-inline">نمایش به تومان</span>
+            </button>
         </div>
     </div>
     <div class="card-body p-0">

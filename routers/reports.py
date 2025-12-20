@@ -293,7 +293,7 @@ def create_pdf_report(report_data: MonthlyReportData) -> bytes:
 @router.get("/monthly-report")
 async def get_monthly_report_pdf(
     month: int = Query(..., ge=1, le=12, description="Month (1-12)"),
-    year: int = Query(..., ge=2020, le=2030, description="Year"),
+    year: int = Query(..., ge=1300, description="Year (Jalali 1300-1500 or Gregorian 1900-2100)"),
     current_user: dict = Depends(get_current_user)
 ):
     """
@@ -323,7 +323,7 @@ async def get_monthly_report_pdf(
 @router.get("/monthly-summary")
 async def get_monthly_summary(
     month: int = Query(..., ge=1, le=12, description="Month (1-12)"),
-    year: int = Query(..., ge=2020, le=2030, description="Year"),
+    year: int = Query(..., ge=1300, description="Year (Jalali 1300-1500 or Gregorian 1900-2100)"),
     current_user: dict = Depends(get_current_user)
 ):
     """

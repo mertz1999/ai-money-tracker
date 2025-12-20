@@ -14,37 +14,26 @@ services:
     labels:
       # --- Traefik Labels ---
       - "traefik.enable=true"
-      # ⭐️ IMPORTANT: This new label tells Traefik to send traffic to this container's internal port 8080.
-      - "traefik.http.services.backend.loadbalancer.server.port=8080"
-      - "traefik.http.routers.backend.rule=Host(`money.ensa-ai.com`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=myresolver"
+      # ⭐️ IMPORTANT: This label tells Traefik to send traffic to this container's internal port 8080.
+      # Using unique service name "money-backend" to avoid conflicts with other services
+      - "traefik.http.services.money-backend.loadbalancer.server.port=8080"
+      - "traefik.http.routers.money-backend.rule=Host(`money.ensa-ai.com`)"
+      - "traefik.http.routers.money-backend.entrypoints=websecure"
+      - "traefik.http.routers.money-backend.tls.certresolver=myresolver"
+    networks:
+      - traefik-network
     restart: unless-stopped
 
-  traefik:
-    image: traefik:v2.5
-    container_name: traefik
-    # ✅ FIXED: Combined the two 'command' blocks into a single, valid command.
-    command:
-      - /bin/sh
-      - -c
-      - |
-        touch /acme.json
-        chmod 600 /acme.json
-        traefik \
-          --api.insecure=true \
-          --providers.docker=true \
-          --entryPoints.web.address=:80 \
-          --entryPoints.websecure.address=:443 \
-          --certificatesResolvers.myresolver.acme.tlsChallenge=true \
-          --certificatesResolvers.myresolver.acme.email=reza.tz780210@gmail.com \
-          --certificatesResolvers.myresolver.acme.storage=/acme.json
-    ports:
-      - "80:80"   # For web traffic and Let's Encrypt
-      - "443:443" # For secure web traffic
-      # This port is for the Traefik dashboard. Since the conflict is resolved, it can stay on 8080.
-      - "8080:8080"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./acme.json:/acme.json"
-    restart: unless-stopped
+networks:
+  traefik-network:
+    external: true
+    name: traefik-network
+
+  # ⚠️ NOTE: Traefik is NOT included here
+  # 
+  # ✅ Use the separate traefik-compose.yaml file to start Traefik:
+  # docker-compose -f traefik-compose.yaml up -d
+  #
+  # The shared Traefik instance handles routing for both domains:
+  # - money.ensa-ai.com -> ai-money-tracker backend (container port 8080)
+  # - ensa-ai.com -> ensa-ai backend (container port 3000)

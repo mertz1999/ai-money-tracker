@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ردیاب پول هوش مصنوعی</title>
+    <title>پولینو</title>
     
     <!-- PWA Meta Tags -->
-    <meta name="application-name" content="ردیاب پول هوش مصنوعی">
+    <meta name="application-name" content="پولینو">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="ردیاب پول">
+    <meta name="apple-mobile-web-app-title" content="پولینو">
     <meta name="description" content="ردیاب شخصی مالی با هوش مصنوعی و پشتیبانی از چندین ارز">
     <meta name="format-detection" content="telephone=no">
     <meta name="mobile-web-app-capable" content="yes">
@@ -54,7 +54,8 @@
         <header class="app-header">
             <div class="app-header-content">
                 <div class="header-left">
-                    <h1 class="app-title">ردیاب پول</h1>
+                    <img src="img/logo.png" alt="پولینو" class="header-logo">
+                    <h1 class="app-title">پولینو</h1>
                 </div>
                 <div class="header-right">
                     <button class="action-btn" id="refreshExchangeBtn" title="تازه‌سازی نرخ ارز">
@@ -111,41 +112,6 @@
                         <div id="sources-table-container"></div>
                     </div>
                     <div class="tab-pane" id="transactions-tab">
-                        <div class="transactions-header">
-                            <div class="date-selectors">
-                                <div class="month-selector">
-                                    <label for="monthSelector" class="form-label">ماه:</label>
-                                    <select id="monthSelector" class="form-select">
-                                        <option value="1">فروردین</option>
-                                        <option value="2">اردیبهشت</option>
-                                        <option value="3">خرداد</option>
-                                        <option value="4">تیر</option>
-                                        <option value="5">مرداد</option>
-                                        <option value="6">شهریور</option>
-                                        <option value="7">مهر</option>
-                                        <option value="8">آبان</option>
-                                        <option value="9">آذر</option>
-                                        <option value="10">دی</option>
-                                        <option value="11">بهمن</option>
-                                        <option value="12">اسفند</option>
-                                    </select>
-                                </div>
-                                <div class="year-selector">
-                                    <label for="yearSelector" class="form-label">سال:</label>
-                                    <select id="yearSelector" class="form-select">
-                                        <option value="1402">1402</option>
-                                        <option value="1403">1403</option>
-                                        <option value="1404" selected>1404</option>
-                                        <option value="1405">1405</option>
-                                        <option value="1406">1406</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button class="currency-toggle-btn" id="toggleCurrencyBtn">
-                                <i class="fas fa-exchange-alt"></i>
-                                <span>نمایش به تومان</span>
-                            </button>
-                        </div>
                         <div id="transactions-table-container"></div>
                     </div>
                     <div class="tab-pane" id="loans-tab">
@@ -177,7 +143,7 @@
             <div class="desktop-warning-card">
                 <h2><i class="fas fa-mobile-alt me-2"></i>Best on Mobile / PWA</h2>
                 <p>
-                    AI Money Tracker is designed for a mobile experience. For the best results,
+                    پولینو is designed for a mobile experience. For the best results,
                     please install it as an app and use it in a mobile-sized window.
                 </p>
                 <div class="desktop-warning-actions">
@@ -194,9 +160,6 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Persian Calendar Library -->
-    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/moment-jalaali@0.10.0/index.js"></script>
     <!-- Custom JS -->
     <script src="js/main.js"></script>
     
@@ -235,6 +198,26 @@
                 navigator.serviceWorker.register('/sw.js')
                     .then((registration) => {
                         console.log('SW registered: ', registration);
+                        
+                        // Check for updates periodically
+                        setInterval(() => {
+                            registration.update();
+                        }, 60000); // Check every minute
+                        
+                        // Listen for updates
+                        registration.addEventListener('updatefound', () => {
+                            console.log('New service worker found, updating...');
+                            const newWorker = registration.installing;
+                            
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New service worker is ready, prompt user to reload
+                                    if (confirm('نسخه جدید برنامه در دسترس است. آیا می‌خواهید صفحه را بارگذاری مجدد کنید؟')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
                     })
                     .catch((registrationError) => {
                         console.log('SW registration failed: ', registrationError);
@@ -313,6 +296,112 @@
             
             // Load initial data
             loadInitialData();
+            
+            // Initialize Jalali Date Picker after components are loaded
+            // This ensures inputs with data-jdp attribute are picked up
+            setTimeout(() => {
+                if (typeof jalaliDatepicker !== 'undefined') {
+                    try {
+                        // Get today's date as an object for initDate
+                        const today = getCurrentPersianDate();
+                        const dateParts = today.split('/');
+                        let initDateObj = null;
+                        if (dateParts.length === 3) {
+                            initDateObj = {
+                                year: parseInt(dateParts[0]),
+                                month: parseInt(dateParts[1]),
+                                day: parseInt(dateParts[2])
+                            };
+                        }
+                        
+                        jalaliDatepicker.startWatch({
+                            date: true,
+                            time: false,
+                            autoShow: false, // Disable auto-show to prevent null date error
+                            autoHide: true,
+                            hideAfterChange: true,
+                            useDropDownYears: true,
+                            separatorChars: {
+                                date: '/',
+                                between: ' ',
+                                time: ':'
+                            },
+                            persianDigits: false,
+                            showTodayBtn: true,
+                            showEmptyBtn: true,
+                            showCloseBtn: true,
+                            autoReadOnlyInput: false,
+                            initDate: initDateObj // Provide date object to avoid null error
+                        });
+                        console.log('Jalali Date Picker initialized after components loaded with initDate:', initDateObj);
+                    } catch (error) {
+                        console.error('Error initializing date picker after components loaded:', error);
+                    }
+                } else {
+                    console.warn('Jalali Date Picker library not available');
+                }
+            }, 1500);
+            
+            // Initialize load transactions button after components are loaded
+            setTimeout(() => {
+                const loadTransactionsBtn = document.getElementById('loadTransactionsBtn');
+                if (loadTransactionsBtn) {
+                    console.log('Load transactions button found after component load, attaching listener');
+                    // Remove any existing listeners
+                    const newBtn = loadTransactionsBtn.cloneNode(true);
+                    loadTransactionsBtn.parentNode.replaceChild(newBtn, loadTransactionsBtn);
+                    
+                    newBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Load transactions button clicked (after component load)');
+                        
+                        // Get month and year from selectors
+                        const monthSelector = document.getElementById('monthSelector');
+                        const yearSelector = document.getElementById('yearSelector');
+                        
+                        if (!monthSelector || !yearSelector) {
+                            console.error('Month or year selector not found');
+                            showErrorToast('لطفا ماه و سال را انتخاب کنید');
+                            return;
+                        }
+                        
+                        const month = parseInt(monthSelector.value);
+                        const year = parseInt(yearSelector.value);
+                        
+                        if (isNaN(month) || isNaN(year)) {
+                            console.error('Invalid month or year:', { month, year });
+                            showErrorToast('لطفا ماه و سال معتبر انتخاب کنید');
+                            return;
+                        }
+                        
+                        console.log('Loading transactions for month:', month, 'year:', year);
+                        
+                        // Show loading indicator
+                        if (typeof showLoadingOverlay === 'function') {
+                            showLoadingOverlay();
+                        }
+                        
+                        // Load transactions from backend
+                        loadTransactions(month, year)
+                            .then(() => {
+                                console.log('Transactions loaded successfully');
+                                if (typeof hideLoadingOverlay === 'function') {
+                                    hideLoadingOverlay();
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error loading transactions:', error);
+                                if (typeof hideLoadingOverlay === 'function') {
+                                    hideLoadingOverlay();
+                                }
+                                showErrorToast('خطا در بارگذاری تراکنش‌ها');
+                            });
+                    });
+                } else {
+                    console.warn('Load transactions button not found after component load');
+                }
+            }, 1000);
             
             // Hide loading overlay
             hideLoadingOverlay();
@@ -511,6 +600,40 @@
                         document.getElementById('saveTransactionBtn').addEventListener('click', saveTransaction);
                         console.log('Save transaction button event listener attached');
                     }
+                    
+                    // Set today's date when modal is shown
+                    setTimeout(() => {
+                        const transactionDateInput = document.getElementById('transactionDate');
+                        if (transactionDateInput) {
+                            console.log('Setting up date input, fetching today date...');
+                            // Set today's date as default (fetch from backend)
+                            if (typeof getCurrentPersianDate === 'function') {
+                                getCurrentPersianDate().then(today => {
+                                    console.log('Today date received:', today);
+                                    transactionDateInput.value = today;
+                                }).catch(error => {
+                                    console.error('Error setting today date:', error);
+                                    // Set fallback date
+                                    transactionDateInput.value = '1404/09/25';
+                                });
+                            } else {
+                                console.warn('getCurrentPersianDate function not available');
+                                // Try to fetch directly
+                                fetch('/api/today_persian_date')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        console.log('Today date fetched directly:', data.date);
+                                        transactionDateInput.value = data.date;
+                                    })
+                                    .catch(error => {
+                                        console.error('Error fetching date directly:', error);
+                                        transactionDateInput.value = '1404/09/25';
+                                    });
+                            }
+                        } else {
+                            console.warn('Transaction date input not found in modal');
+                        }
+                    }, 100);
                 });
             }
 
@@ -529,17 +652,12 @@
 
 
         function initializeExistingFeatures() {
-            // Month selector
+            // Month selector - event listener is handled in main.js initializeMonthSelector()
+            // Don't add duplicate event listener here to avoid conflicts
             const monthSelector = document.getElementById('monthSelector');
-            if (monthSelector) {
+            if (monthSelector && typeof currentMonth !== 'undefined') {
                 // Use the global currentMonth variable
                 monthSelector.value = currentMonth;
-                
-                monthSelector.addEventListener('change', function() {
-                    const selectedMonth = parseInt(this.value);
-                    currentMonth = selectedMonth; // Update global currentMonth
-                    loadTransactions(selectedMonth);
-                });
             }
             
             // Currency toggle

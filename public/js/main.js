@@ -180,40 +180,43 @@ function initializePersianYearDropdown() {
         console.log('Persian year dropdown initialized with year:', persianYear);
         return true;
     } else {
-        console.warn('reportYear dropdown not found, retrying...');
+        // Dropdown doesn't exist - this is fine, it might not be on this page
         return false;
     }
 }
 
 // Initialize year dropdown with retry mechanism
-function initializeYearDropdownWithRetry(maxRetries = 10) {
+function initializeYearDropdownWithRetry(maxRetries = 3) {
     let retries = 0;
     const tryInit = () => {
-        if (initializePersianYearDropdown()) {
-            console.log('Year dropdown initialized successfully');
-            // Also initialize the month selector to current Persian month
-            const monthSelect = document.getElementById('monthSelector');
-            if (monthSelect) {
-                let currentPersianMonth = 10; // Default fallback
-                
-                if (typeof moment !== 'undefined' && moment().format) {
-                    const monthStr = moment().format('jM');
-                    currentPersianMonth = parseInt(monthStr);
-                    console.log('Using moment.js for month initialization:', currentPersianMonth);
-                } else {
-                    console.log('Moment.js not available, using fallback month:', currentPersianMonth);
+        const yearSelect = document.getElementById('reportYear');
+        if (yearSelect) {
+            if (initializePersianYearDropdown()) {
+                console.log('Year dropdown initialized successfully');
+                // Also initialize the month selector to current Persian month
+                const monthSelect = document.getElementById('monthSelector');
+                if (monthSelect) {
+                    let currentPersianMonth = 10; // Default fallback
+                    
+                    if (typeof moment !== 'undefined' && moment().format) {
+                        const monthStr = moment().format('jM');
+                        currentPersianMonth = parseInt(monthStr);
+                        console.log('Using moment.js for month initialization:', currentPersianMonth);
+                    } else {
+                        console.log('Moment.js not available, using fallback month:', currentPersianMonth);
+                    }
+                    
+                    monthSelect.value = currentPersianMonth;
+                    currentMonth = currentPersianMonth;
+                    console.log('Month selector set to current Persian month:', currentPersianMonth);
                 }
-                
-                monthSelect.value = currentPersianMonth;
-                currentMonth = currentPersianMonth;
-                console.log('Month selector set to current Persian month:', currentPersianMonth);
             }
         } else if (retries < maxRetries) {
             retries++;
-            console.log(`Retrying year dropdown initialization (${retries}/${maxRetries})`);
-            setTimeout(tryInit, 200);
+            setTimeout(tryInit, 500);
         } else {
-            console.error('Failed to initialize year dropdown after maximum retries');
+            // Silently fail - the dropdown might not exist on this page
+            // Don't log error as it's not critical
         }
     };
     tryInit();
@@ -222,11 +225,14 @@ function initializeYearDropdownWithRetry(maxRetries = 10) {
 // Ensure year dropdown is ready before any transaction loading
 function ensureYearDropdownReady() {
     const yearSelect = document.getElementById('reportYear');
-    if (!yearSelect || !yearSelect.value || isNaN(parseInt(yearSelect.value))) {
-        console.log('Year dropdown not ready, initializing...');
-        initializePersianYearDropdown();
-        return false;
+    if (yearSelect) {
+        if (!yearSelect.value || isNaN(parseInt(yearSelect.value))) {
+            initializePersianYearDropdown();
+            return false;
+        }
+        return true;
     }
+    // Dropdown doesn't exist - return true to not block execution
     return true;
 }
 
@@ -355,6 +361,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 setupDateInputAutoSlash(transactionDateInput);
             } else {
                 console.warn('Transaction date input not found in modal');
+            }
+            
+            // Setup currency symbol update
+            const currencySelect = document.getElementById('transactionCurrency');
+            const amountCurrency = document.getElementById('amountCurrency');
+            if (currencySelect && amountCurrency) {
+                // Function to update currency symbol
+                function updateCurrencySymbol() {
+                    const isUSD = currencySelect.value === 'true';
+                    amountCurrency.textContent = isUSD ? '$' : 'ت';
+                }
+                
+                // Set initial symbol based on current selection
+                updateCurrencySymbol();
+                
+                // Update when currency changes
+                currencySelect.addEventListener('change', updateCurrencySymbol);
             }
             // Hide parsed details section by default
             const parsedDetails = document.getElementById('parsedTransactionDetails');

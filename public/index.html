@@ -297,50 +297,6 @@
             // Load initial data
             loadInitialData();
             
-            // Initialize Jalali Date Picker after components are loaded
-            // This ensures inputs with data-jdp attribute are picked up
-            setTimeout(() => {
-                if (typeof jalaliDatepicker !== 'undefined') {
-                    try {
-                        // Get today's date as an object for initDate
-                        const today = getCurrentPersianDate();
-                        const dateParts = today.split('/');
-                        let initDateObj = null;
-                        if (dateParts.length === 3) {
-                            initDateObj = {
-                                year: parseInt(dateParts[0]),
-                                month: parseInt(dateParts[1]),
-                                day: parseInt(dateParts[2])
-                            };
-                        }
-                        
-                        jalaliDatepicker.startWatch({
-                            date: true,
-                            time: false,
-                            autoShow: false, // Disable auto-show to prevent null date error
-                            autoHide: true,
-                            hideAfterChange: true,
-                            useDropDownYears: true,
-                            separatorChars: {
-                                date: '/',
-                                between: ' ',
-                                time: ':'
-                            },
-                            persianDigits: false,
-                            showTodayBtn: true,
-                            showEmptyBtn: true,
-                            showCloseBtn: true,
-                            autoReadOnlyInput: false,
-                            initDate: initDateObj // Provide date object to avoid null error
-                        });
-                        console.log('Jalali Date Picker initialized after components loaded with initDate:', initDateObj);
-                    } catch (error) {
-                        console.error('Error initializing date picker after components loaded:', error);
-                    }
-                } else {
-                    console.warn('Jalali Date Picker library not available');
-                }
-            }, 1500);
             
             // Initialize load transactions button after components are loaded
             setTimeout(() => {
@@ -632,6 +588,23 @@
                             }
                         } else {
                             console.warn('Transaction date input not found in modal');
+                        }
+                        
+                        // Setup currency symbol update
+                        const currencySelect = document.getElementById('transactionCurrency');
+                        const amountCurrency = document.getElementById('amountCurrency');
+                        if (currencySelect && amountCurrency) {
+                            // Update currency symbol based on selection
+                            function updateCurrencySymbol() {
+                                const isUSD = currencySelect.value === 'true';
+                                amountCurrency.textContent = isUSD ? '$' : 'ت';
+                            }
+                            
+                            // Set initial symbol
+                            updateCurrencySymbol();
+                            
+                            // Update when currency changes
+                            currencySelect.addEventListener('change', updateCurrencySymbol);
                         }
                     }, 100);
                 });
